@@ -42,6 +42,14 @@ User.init({
         type: DataTypes.ENUM('ADMIN', 'CLIENT'),
         defaultValue: 'CLIENT',
     },
+    planId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        references: {
+            model: 'plans',
+            key: 'id'
+        }
+    }
 }, {
     sequelize,
     modelName: 'User',

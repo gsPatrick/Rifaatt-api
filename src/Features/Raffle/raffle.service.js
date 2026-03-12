@@ -1,6 +1,6 @@
 const Raffle = require('../../Models/Raffle');
 const Reservation = require('../../Models/Reservation');
-const GroupActivation = require('../../Models/GroupActivation');
+const { GroupActivation, User, Plan } = require('../../Models');
 const WhatsAppInstance = require('../../Models/WhatsAppInstance');
 const InstanceService = require('../Instance/instance.service');
 const { Op } = require('sequelize');
@@ -218,6 +218,22 @@ class RaffleService {
     }
 
     async createAndActivateGroup(userId, instanceId, groupName) {
+        const user = await User.findByPk(userId, { include: [Plan] });
+        if (!user) throw new Error('Usuário não encontrado.');
+
+        const groupCount = await GroupActivation.count({
+            include: [{
+                model: WhatsAppInstance,
+                where: { userId }
+            }],
+            where: { status: 'active' }
+        });
+
+        const limit = user.Plan ? user.Plan.groupLimit : 1;
+        if (groupCount >= limit) {
+            throw new Error(`Limite de grupos ativos atingido para o seu plano (${limit}).`);
+        }
+
         const instance = await WhatsAppInstance.findByPk(instanceId);
         if (!instance) throw new Error('Instância não encontrada.');
         if (instance.status !== 'connected') throw new Error('A instância deve estar conectada para criar um grupo.');
@@ -240,6 +256,28 @@ class RaffleService {
     }
 
     async activateExistingGroup(userId, instanceId, jid, name) {
+        const user = await User.findByPk(userId, { include: [Plan] });
+        if (!user) throw new Error('Usuário não encontrado.');
+
+        const existingActivation = await GroupActivation.findOne({ where: { groupJid: jid, status: 'active' } });
+        
+        // If it's already active, we don't count it as a "new" activation for the limit check if it's just a refresh
+        // But if it's inactive and we are activating, or it's a new one:
+        if (!existingActivation) {
+            const groupCount = await GroupActivation.count({
+                include: [{
+                    model: WhatsAppInstance,
+                    where: { userId }
+                }],
+                where: { status: 'active' }
+            });
+
+            const limit = user.Plan ? user.Plan.groupLimit : 1;
+            if (groupCount >= limit) {
+                throw new Error(`Limite de grupos ativos atingido para o seu plano (${limit}).`);
+            }
+        }
+
         const instance = await WhatsAppInstance.findByPk(instanceId);
         if (!instance) throw new Error('Instância não encontrada.');
         if (instance.status !== 'connected') throw new Error('Instância offline.');

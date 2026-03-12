@@ -1,10 +1,14 @@
 const User = require('./User');
+const Plan = require('./Plan');
 const Raffle = require('./Raffle');
 const Reservation = require('./Reservation');
 const WhatsAppInstance = require('./WhatsAppInstance');
 const GroupActivation = require('./GroupActivation');
 
 // Associations
+User.belongsTo(Plan, { foreignKey: 'planId' });
+Plan.hasMany(User, { foreignKey: 'planId' });
+
 User.hasMany(WhatsAppInstance, { foreignKey: 'userId' });
 WhatsAppInstance.belongsTo(User, { foreignKey: 'userId' });
 
@@ -22,6 +26,7 @@ GroupActivation.hasMany(Raffle, { foreignKey: 'groupJid', sourceKey: 'groupJid' 
 
 module.exports = {
     User,
+    Plan,
     Raffle,
     Reservation,
     WhatsAppInstance,

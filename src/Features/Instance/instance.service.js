@@ -1,5 +1,5 @@
 const axios = require('axios');
-const WhatsAppInstance = require('../../Models/WhatsAppInstance');
+const { WhatsAppInstance, User, Plan } = require('../../Models');
 
 class InstanceService {
     #getClient(apiUrl) {
@@ -9,6 +9,17 @@ class InstanceService {
     }
 
     async initInstance(apiUrl, adminToken, name, userId) {
+        // Limit Check
+        const user = await User.findByPk(userId, { include: [Plan] });
+        if (!user) throw new Error('Usuário não encontrado.');
+
+        const instanceCount = await WhatsAppInstance.count({ where: { userId } });
+        const limit = user.Plan ? user.Plan.instanceLimit : 1; // Default to 1 if no plan
+
+        if (instanceCount >= limit) {
+            throw new Error(`Limite de instâncias atingido para o seu plano (${limit}).`);
+        }
+
         const finalApiUrl = apiUrl || process.env.UAZAPI_URL;
         const finalAdminToken = adminToken || process.env.UAZAPI_ADMIN_TOKEN;
 
