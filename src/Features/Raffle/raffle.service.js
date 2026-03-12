@@ -281,7 +281,7 @@ class RaffleService {
         // If not, we might need to filter based on presence in participants with isGroupAdmin: true
         if (!Array.isArray(groups)) return [];
 
-        return groups.filter(g => g.isAdmin || g.isGroupAdmin);
+        return groups.filter(g => g.isAdmin || g.isGroupAdmin || g.isOwner || g.isSuperAdmin);
     }
 }
 
