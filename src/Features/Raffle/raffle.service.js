@@ -275,10 +275,11 @@ class RaffleService {
         if (!instance) throw new Error('Instância não encontrada.');
         if (instance.status !== 'connected') throw new Error('Instância offline.');
 
-        const groups = await InstanceService.fetchAllGroups(instance.token, instance.apiUrl);
+        const data = await InstanceService.fetchAllGroups(instance.token, instance.apiUrl);
+        
+        // Uazapi /group/list returns { groups: [...] }
+        const groups = data.groups || [];
 
-        // Filter by admin status. Uazapi 'listAll' usually returns { id, subject, isAdmin, ... }
-        // If not, we might need to filter based on presence in participants with isGroupAdmin: true
         if (!Array.isArray(groups)) return [];
 
         return groups.filter(g => g.isAdmin || g.isGroupAdmin || g.isOwner || g.isSuperAdmin);

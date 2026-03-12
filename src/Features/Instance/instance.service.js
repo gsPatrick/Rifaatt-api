@@ -180,7 +180,7 @@ class InstanceService {
         // Delete from Uazapi first
         try {
             const client = this.#getClient(instance.apiUrl);
-            await client.delete('/instance/delete', {
+            await client.delete(`/instance`, {
                 headers: { token: instance.token }
             });
         } catch (error) {
@@ -194,7 +194,7 @@ class InstanceService {
 
     async fetchAllGroups(token, apiUrl) {
         const client = this.#getClient(apiUrl);
-        const response = await client.get('/group/listAll', {
+        const response = await client.get('/group/list', {
             headers: { token }
         });
         return response.data;
