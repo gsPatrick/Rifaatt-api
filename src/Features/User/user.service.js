@@ -3,7 +3,11 @@ const jwt = require('jsonwebtoken');
 
 class UserService {
     async createUser(data) {
-        return await User.create(data);
+        const user = await User.create(data);
+        const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, {
+            expiresIn: '7d',
+        });
+        return { user, token };
     }
 
     async login(email, password) {
