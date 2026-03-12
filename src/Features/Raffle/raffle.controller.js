@@ -63,6 +63,17 @@ class RaffleController {
         }
     }
 
+    async activate(req, res) {
+        try {
+            const userId = req.user.id;
+            const { instanceId, jid, name } = req.body;
+            const activation = await RaffleService.activateExistingGroup(userId, instanceId, jid, name);
+            return res.status(201).json(activation);
+        } catch (error) {
+            return res.status(400).json({ error: error.message });
+        }
+    }
+
     async getGroupsFromInstance(req, res) {
         try {
             const { instanceId } = req.params;

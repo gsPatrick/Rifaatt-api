@@ -239,6 +239,37 @@ class RaffleService {
         return activation;
     }
 
+    async activateExistingGroup(userId, instanceId, jid, name) {
+        const instance = await WhatsAppInstance.findByPk(instanceId);
+        if (!instance) throw new Error('Instância não encontrada.');
+        if (instance.status !== 'connected') throw new Error('Instância offline.');
+
+        // Set expiration to 30 days by default
+        const expirationDate = new Date();
+        expirationDate.setDate(expirationDate.getDate() + 30);
+
+        // Check if already activated
+        const existing = await GroupActivation.findOne({ where: { groupJid: jid } });
+        if (existing) {
+            existing.status = 'active';
+            existing.expirationDate = expirationDate;
+            existing.instanceId = instanceId;
+            existing.groupName = name;
+            await existing.save();
+            return existing;
+        }
+
+        const activation = await GroupActivation.create({
+            groupJid: jid,
+            groupName: name,
+            instanceId: instanceId,
+            expirationDate,
+            status: 'active'
+        });
+
+        return activation;
+    }
+
     async finalizeWithWinner(raffleId, winningNumber) {
         const raffle = await Raffle.findByPk(raffleId, {
             include: [{ model: WhatsAppInstance }]
