@@ -15,7 +15,7 @@ class RaffleService {
             where: { groupJid, status: 'ACTIVE' },
             include: [
                 { model: Reservation, required: false },
-                { model: GroupActivation, required: false }
+                { model: WhatsAppInstance, required: false }
             ],
             order: [['createdAt', 'DESC']]
         });
@@ -23,27 +23,40 @@ class RaffleService {
 
     async getAnimalForNumber(numStr) {
         const num = parseInt(numStr);
-        const normalizedNum = (num === 0) ? 100 : num;
-
-        const animals = [
-            "🦢 Cisne", "🦅 Águia", "🐴 Cavalo", "🦋 Borboleta", "🐶 Cachorro",
-            "🐐 Cabra", "🐏 Carneiro", "🐫 Camelo", "🐍 Cobra", "🐇 Coelho",
-            "🐎 Cavalo", "🐘 Elefante", "🐔 Galo", "🐈 Gato", "🐊 Jacaré",
-            "🦁 Leão", "🦍 Macaco", "🐷 Porco", "🦚 Pavão", "🦃 Peru",
-            "🐃 Touro", "🐅 Tigre", "🐻 Urso", "🦌 Veado", "🐄 Vaca"
-        ];
-
-        const index = Math.ceil(normalizedNum / 4) - 1;
-        return animals[index] || "❓ Desconhecido";
+        const dict = {
+            '01': { e: '🦢', n: 'Cisne' }, '02': { e: '🦢', n: 'Cisne' }, '03': { e: '🦢', n: 'Cisne' }, '04': { e: '🦢', n: 'Cisne' },
+            '05': { e: '🦅', n: 'Águia' }, '06': { e: '🦅', n: 'Águia' }, '07': { e: '🦅', n: 'Águia' }, '08': { e: '🦅', n: 'Águia' },
+            '09': { e: '🐴', n: 'Cavalo' }, '10': { e: '🐴', n: 'Cavalo' }, '11': { e: '🐴', n: 'Cavalo' }, '12': { e: '🐴', n: 'Cavalo' },
+            '13': { e: '🦋', n: 'Borboleta' }, '14': { e: '🦋', n: 'Borboleta' }, '15': { e: '🦋', n: 'Borboleta' }, '16': { e: '🦋', n: 'Borboleta' },
+            '17': { e: '🐶', n: 'Cachorro' }, '18': { e: '🐶', n: 'Cachorro' }, '19': { e: '🐶', n: 'Cachorro' }, '20': { e: '🐶', n: 'Cachorro' },
+            '21': { e: '🐐', n: 'Cabra' }, '22': { e: '🐐', n: 'Cabra' }, '23': { e: '🐐', n: 'Cabra' }, '24': { e: '🐐', n: 'Cabra' },
+            '25': { e: '🐏', n: 'Carneiro' }, '26': { e: '🐏', n: 'Carneiro' }, '27': { e: '🐏', n: 'Carneiro' }, '28': { e: '🐏', n: 'Carneiro' },
+            '29': { e: '🐫', n: 'Camelo' }, '30': { e: '🐫', n: 'Camelo' }, '31': { e: '🐫', n: 'Camelo' }, '32': { e: '🐫', n: 'Camelo' },
+            '33': { e: '🐍', n: 'Cobra' }, '34': { e: '🐍', n: 'Cobra' }, '35': { e: '🐍', n: 'Cobra' }, '36': { e: '🐍', n: 'Cobra' },
+            '37': { e: '🐇', n: 'Coelho' }, '38': { e: '🐇', n: 'Coelho' }, '39': { e: '🐇', n: 'Coelho' }, '40': { e: '🐇', n: 'Coelho' },
+            '41': { e: '🐎', n: 'Cavalo' }, '42': { e: '🐎', n: 'Cavalo' }, '43': { e: '🐎', n: 'Cavalo' }, '44': { e: '🐎', n: 'Cavalo' },
+            '45': { e: '🐘', n: 'Elefante' }, '46': { e: '🐘', n: 'Elefante' }, '47': { e: '🐘', n: 'Elefante' }, '48': { e: '🐘', n: 'Elefante' },
+            '49': { e: '🐔', n: 'Galo' }, '50': { e: '🐔', n: 'Galo' }, '51': { e: '🐔', n: 'Galo' }, '52': { e: '🐔', n: 'Galo' },
+            '53': { e: '🐈', n: 'Gato' }, '54': { e: '🐈', n: 'Gato' }, '55': { e: '🐈', n: 'Gato' }, '56': { e: '🐈', n: 'Gato' },
+            '57': { e: '🐊', n: 'Jacaré' }, '58': { e: '🐊', n: 'Jacaré' }, '59': { e: '🐊', n: 'Jacaré' }, '60': { e: '🐊', n: 'Jacaré' },
+            '61': { e: '🦁', n: 'Leão' }, '62': { e: '🦁', n: 'Leão' }, '63': { e: '🦁', n: 'Leão' }, '64': { e: '🦁', n: 'Leão' },
+            '65': { e: '🦍', n: 'Macaco' }, '66': { e: '🦍', n: 'Macaco' }, '67': { e: '🦍', n: 'Macaco' }, '68': { e: '🦍', n: 'Macaco' },
+            '69': { e: '🐷', n: 'Porco' }, '70': { e: '🐷', n: 'Porco' }, '71': { e: '🐷', n: 'Porco' }, '72': { e: '🐷', n: 'Porco' },
+            '73': { e: '🦚', n: 'Pavão' }, '74': { e: '🦚', n: 'Pavão' }, '75': { e: '🦚', n: 'Pavão' }, '76': { e: '🦚', n: 'Pavão' },
+            '77': { e: '🦃', n: 'Peru' }, '78': { e: '🦃', n: 'Peru' }, '79': { e: '🦃', n: 'Peru' }, '80': { e: '🦃', n: 'Peru' },
+            '81': { e: '🐃', n: 'Touro' }, '82': { e: '🐃', n: 'Touro' }, '83': { e: '🐃', n: 'Touro' }, '84': { e: '🐃', n: 'Touro' },
+            '85': { e: '🐅', n: 'Tigre' }, '86': { e: '🐅', n: 'Tigre' }, '87': { e: '🐅', n: 'Tigre' }, '88': { e: '🐅', n: 'Tigre' },
+            '89': { e: '🐻', n: 'Urso' }, '90': { e: '🐻', n: 'Urso' }, '91': { e: '🐻', n: 'Urso' }, '92': { e: '🐻', n: 'Urso' },
+            '93': { e: '🦌', n: 'Veado' }, '94': { e: '🦌', n: 'Veado' }, '95': { e: '🦌', n: 'Veado' }, '96': { e: '🦌', n: 'Veado' },
+            '97': { e: '🐄', n: 'Vaca' }, '98': { e: '🐄', n: 'Vaca' }, '99': { e: '🐄', n: 'Vaca' }, '00': { e: '🐄', n: 'Vaca' }
+        };
+        const normalized = numStr.padStart(2, '0');
+        return dict[normalized] || { e: '❓', n: 'Desconhecido' };
     }
 
     async generateVisualList(raffleId) {
         const raffle = await Raffle.findByPk(raffleId);
         if (!raffle) throw new Error('Rifa não encontrada.');
-
-        if (!raffle.title || !raffle.prize) {
-            return "⚠️ *Aviso*: A rifa precisa de um Título e um Prêmio definidos para gerar a lista.";
-        }
 
         const reservations = await Reservation.findAll({ where: { raffleId: raffleId } });
         const resMap = {};
@@ -52,42 +65,29 @@ class RaffleService {
         });
 
         let message = `🎰 *${raffle.title}*\n`;
-        message += `🎁 Prêmio: ${raffle.prize}\n`;
-        message += `💰 Valor: R$ ${raffle.ticketValue}\n`;
-        message += `🔑 PIX: ${raffle.pixKey}\n\n`;
+        message += `🎁 *PRÊMIO:* ${raffle.prize}\n`;
+        message += `💰 *VALOR:* R$ ${raffle.ticketValue}\n`;
+        message += `🔑 *PIX:* ${raffle.pixKey}\n\n`;
 
         const numbers = [];
         for (let i = 1; i <= 99; i++) numbers.push(i.toString().padStart(2, '0'));
         numbers.push('00');
-
-        let currentAnimal = "";
-        let line = "";
 
         for (let i = 0; i < numbers.length; i++) {
             const num = numbers[i];
             const animal = await this.getAnimalForNumber(num);
             const res = resMap[num];
 
-            let statusEmoji = "";
-            let buyerName = "";
+            let status = "";
+            let buyer = "";
 
             if (res) {
-                statusEmoji = res.status === 'PAID' ? '✅' : '❌';
-                buyerName = ` ${res.buyerName}`;
+                status = res.status === 'PAID' ? '✅' : '⏳';
+                buyer = ` ${res.buyerName}`;
             }
 
-            const animalEmoji = animal.split(' ')[0];
-            const item = `${animalEmoji}${num}.${buyerName}${statusEmoji}`;
-
-            if (animal !== currentAnimal) {
-                if (line) message += line + "\n";
-                currentAnimal = animal;
-                line = item;
-            } else {
-                line += " | " + item;
-            }
+            message += `${animal.e}${num}.${buyer} ${status}\n`;
         }
-        message += line;
 
         return message;
     }
@@ -122,15 +122,15 @@ class RaffleService {
         const alreadyTaken = existing.map(r => r.number);
         const available = numbers.filter(n => !alreadyTaken.includes(n));
 
-        if (available.length === 0) {
+        if (alreadyTaken.length > 0) {
             return {
                 success: false,
-                status: 'ALL_TAKEN',
+                status: 'TAKEN',
                 alreadyTaken
             };
         }
 
-        const reserved = await Promise.all(available.map(number =>
+        const reserved = await Promise.all(numbers.map(number =>
             Reservation.create({
                 raffleId,
                 buyerName,
@@ -142,9 +142,8 @@ class RaffleService {
 
         return {
             success: true,
-            status: alreadyTaken.length > 0 ? 'PARTIAL' : 'FULL',
+            status: 'FULL',
             reserved: reserved.map(r => r.number),
-            alreadyTaken,
             totalReserved: reserved.length
         };
     }
@@ -169,11 +168,43 @@ class RaffleService {
     async getHistory(userId) {
         return await Raffle.findAll({
             where: { status: 'FINISHED' },
-            include: [{
-                model: Reservation,
-                required: false
-            }]
+            include: [
+                {
+                    model: WhatsAppInstance,
+                    where: { userId },
+                    required: true
+                },
+                {
+                    model: Reservation,
+                    required: false
+                },
+                {
+                    model: GroupActivation,
+                    required: false
+                }
+            ],
+            order: [['updatedAt', 'DESC']]
         });
+    }
+
+    async getFinanceSummary(raffleId) {
+        const raffle = await Raffle.findByPk(raffleId, {
+            include: [{ model: Reservation }]
+        });
+        if (!raffle) throw new Error('Rifa não encontrada.');
+
+        const reservations = raffle.Reservations || [];
+        const paid = reservations.filter(r => r.status === 'PAID');
+        const pending = reservations.length - paid.length;
+
+        return {
+            total: reservations.length,
+            paid: paid.length,
+            pending: pending,
+            paidValue: paid.length * raffle.ticketValue,
+            pendingValue: pending * raffle.ticketValue,
+            totalValue: reservations.length * raffle.ticketValue
+        };
     }
 
     async removeReservations(raffleId, numbersStr) {
@@ -191,12 +222,9 @@ class RaffleService {
         if (!instance) throw new Error('Instância não encontrada.');
         if (instance.status !== 'connected') throw new Error('A instância deve estar conectada para criar um grupo.');
 
-        // 1. Create group via UazAPI
         const groupData = await InstanceService.createGroup(instance.token, groupName, [], instance.apiUrl);
         if (!groupData.id) throw new Error('Falha ao obter JID do novo grupo.');
 
-        // 2. Activate group in our database
-        // Default expiration: 30 days
         const expirationDate = new Date();
         expirationDate.setDate(expirationDate.getDate() + 30);
 
@@ -221,7 +249,6 @@ class RaffleService {
         raffle.status = 'FINISHED';
         await raffle.save();
 
-        // Find the winner
         const winner = await Reservation.findOne({
             where: { raffleId, number: winningNumber, status: 'PAID' }
         });
@@ -241,6 +268,20 @@ class RaffleService {
         }
 
         return raffle;
+    }
+
+    async getGroupsFromInstance(instanceId) {
+        const instance = await WhatsAppInstance.findByPk(instanceId);
+        if (!instance) throw new Error('Instância não encontrada.');
+        if (instance.status !== 'connected') throw new Error('Instância offline.');
+
+        const groups = await InstanceService.fetchAllGroups(instance.token, instance.apiUrl);
+
+        // Filter by admin status. Uazapi 'listAll' usually returns { id, subject, isAdmin, ... }
+        // If not, we might need to filter based on presence in participants with isGroupAdmin: true
+        if (!Array.isArray(groups)) return [];
+
+        return groups.filter(g => g.isAdmin || g.isGroupAdmin);
     }
 }
 

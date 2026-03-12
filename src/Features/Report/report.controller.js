@@ -3,16 +3,9 @@ const ReportService = require('./report.service');
 class ReportController {
     async getTopUsers(req, res) {
         try {
-            const recurrent = await ReportService.getTopRecurrent();
-            const winners = []; // To wrap logic later
-            const losers = [];
-
-            res.json({
-                recurrent,
-                winners,
-                losers,
-                buyers: recurrent
-            });
+            const userId = req.user.id;
+            const rankings = await ReportService.getTopUsers(userId);
+            res.json(rankings);
         } catch (error) {
             res.status(500).json({ error: error.message });
         }
@@ -20,12 +13,19 @@ class ReportController {
 
     async getSalesStats(req, res) {
         try {
-            const chartData = await ReportService.getSalesChartData();
-            res.json({
-                chartData,
-                totalSales: "R$ 12.450,00",
-                trend: "+12%"
-            });
+            const userId = req.user.id;
+            const stats = await ReportService.getSalesStats(userId);
+            res.json(stats);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    async getDashboardSummary(req, res) {
+        try {
+            const userId = req.user.id;
+            const summary = await ReportService.getDashboardSummary(userId);
+            res.json(summary);
         } catch (error) {
             res.status(500).json({ error: error.message });
         }

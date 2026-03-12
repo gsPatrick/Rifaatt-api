@@ -1,38 +1,165 @@
-const { Raffle, Reservation, User, GroupActivation } = require('../../Models');
+const { Raffle, Reservation, WhatsAppInstance } = require('../../Models');
 const { Op, fn, col } = require('sequelize');
 
 class ReportService {
-    async getTopRecurrent() {
-        // Users with most reservations
-        return await Reservation.findAll({
-            attributes: [
-                'buyerName',
-                [fn('COUNT', col('id')), 'participations'],
-                [fn('COUNT', fn('DISTINCT', col('raffleId'))), 'groups'],
-            ],
-            group: ['buyerName'],
-            order: [[fn('COUNT', col('id')), 'DESC']],
-            limit: 10
+    async getSalesStats(userId) {
+        const results = [];
+        const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
+
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            date.setHours(0, 0, 0, 0);
+            const nextDate = new Date(date);
+            nextDate.setDate(date.getDate() + 1);
+
+            const count = await Reservation.count({
+                include: [{
+                    model: Raffle,
+                    required: true,
+                    include: [{
+                        model: WhatsAppInstance,
+                        where: { userId },
+                        required: true
+                    }]
+                }],
+                where: {
+                    createdAt: { [Op.between]: [date, nextDate] }
+                }
+            });
+            results.push({ name: days[date.getDay()], v: count });
+        }
+
+        const totalReservations = await Reservation.findAll({
+            include: [{
+                model: Raffle,
+                required: true,
+                include: [{
+                    model: WhatsAppInstance,
+                    where: { userId },
+                    required: true
+                }]
+            }]
         });
+
+        const totalValue = totalReservations.reduce((acc, curr) => acc + parseFloat(curr.Raffle?.ticketValue || 0), 0);
+
+        return {
+            chartData: results,
+            totalSales: `R$ ${totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+            trend: '+12%'
+        };
     }
 
-    async getTopBuyers() {
-        // This would ideally join with Raffle to get ticketValue
-        // For now, let's return a list of most active phones/names
-        return await this.getTopRecurrent();
+    async getTopUsers(userId) {
+        const reservations = await Reservation.findAll({
+            include: [{
+                model: Raffle,
+                include: [{
+                    model: WhatsAppInstance,
+                    where: { userId },
+                    required: true
+                }]
+            }]
+        });
+
+        const userMap = {};
+        reservations.forEach(r => {
+            const phone = r.buyerPhone;
+            if (!userMap[phone]) {
+                userMap[phone] = {
+                    id: phone,
+                    name: r.buyerName,
+                    participations: 0,
+                    groups: new Set(),
+                    total: 0,
+                    wins: 0
+                };
+            }
+            userMap[phone].participations += 1;
+            userMap[phone].groups.add(r.raffleId);
+            userMap[phone].total += parseFloat(r.Raffle?.ticketValue || 0);
+
+            if (r.Raffle?.status === 'FINISHED' && r.Raffle?.winningNumber === r.number) {
+                userMap[phone].wins += 1;
+            }
+        });
+
+        const formatted = Object.values(userMap).map(u => ({
+            id: u.id,
+            name: u.name,
+            participations: u.participations,
+            groups: u.groups.size,
+            value: `R$ ${u.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+            wins: u.wins,
+            totalWon: `R$ ${(u.wins * 500).toFixed(2)}`,
+            luck: u.participations > 0 ? `${Math.round((u.wins / u.participations) * 100)}%` : '0%',
+            spent: `R$ ${u.total.toFixed(2)}`
+        }));
+
+        return {
+            recurrent: [...formatted].sort((a, b) => b.participations - a.participations).slice(0, 10),
+            winners: [...formatted].filter(u => u.wins > 0).sort((a, b) => b.wins - a.wins).slice(0, 10),
+            losers: [...formatted].filter(u => u.wins === 0).sort((a, b) => b.participations - a.participations).slice(0, 10),
+            buyers: [...formatted].sort((a, b) => parseFloat(b.spent.replace('R$ ', '')) - parseFloat(a.spent.replace('R$ ', ''))).slice(0, 10)
+        };
     }
 
-    async getSalesChartData() {
-        // Daily sales from the last 7 days
-        return [
-            { name: 'Seg', v: 400 },
-            { name: 'Ter', v: 300 },
-            { name: 'Qua', v: 600 },
-            { name: 'Qui', v: 800 },
-            { name: 'Sex', v: 500 },
-            { name: 'Sab', v: 900 },
-            { name: 'Dom', v: 1100 },
-        ];
+    async getDashboardSummary(userId) {
+        const activeGroups = await GroupActivation.count({
+            include: [{
+                model: WhatsAppInstance,
+                where: { userId },
+                required: true
+            }]
+        });
+
+        const activeInstances = await WhatsAppInstance.count({
+            where: { userId, status: 'CONNECTED' }
+        });
+
+        const totalReservations = await Reservation.findAll({
+            include: [{
+                model: Raffle,
+                required: true,
+                include: [{
+                    model: WhatsAppInstance,
+                    where: { userId },
+                    required: true
+                }]
+            }]
+        });
+
+        const totalValue = totalReservations.reduce((acc, curr) => acc + parseFloat(curr.Raffle?.ticketValue || 0), 0);
+
+        // Recent activities (last 5 reservations)
+        const recentReservations = await Reservation.findAll({
+            limit: 5,
+            order: [['createdAt', 'DESC']],
+            include: [{
+                model: Raffle,
+                required: true,
+                include: [{
+                    model: WhatsAppInstance,
+                    where: { userId },
+                    required: true
+                }]
+            }]
+        });
+
+        const activities = recentReservations.map(r => ({
+            id: r.id,
+            type: 'new_reservation',
+            message: `Nova reserva: dezena ${r.number} por ${r.buyerName} no grupo ${r.Raffle?.title || 'Rifa'}.`,
+            time: 'Recente'
+        }));
+
+        return {
+            activeGroups,
+            activeInstances,
+            totalValue: `R$ ${totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+            activities
+        };
     }
 }
 

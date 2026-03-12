@@ -62,6 +62,16 @@ class RaffleController {
             return res.status(400).json({ error: error.message });
         }
     }
+
+    async getGroupsFromInstance(req, res) {
+        try {
+            const { instanceId } = req.params;
+            const groups = await RaffleService.getGroupsFromInstance(instanceId);
+            return res.json(groups);
+        } catch (error) {
+            return res.status(400).json({ error: error.message });
+        }
+    }
 }
 
 module.exports = new RaffleController();

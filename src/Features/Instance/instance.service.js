@@ -9,9 +9,12 @@ class InstanceService {
     }
 
     async initInstance(apiUrl, adminToken, name, userId) {
-        const client = this.#getClient(apiUrl);
+        const finalApiUrl = apiUrl || process.env.UAZAPI_URL;
+        const finalAdminToken = adminToken || process.env.UAZAPI_ADMIN_TOKEN;
+
+        const client = this.#getClient(finalApiUrl);
         const response = await client.post('/instance/init', { name }, {
-            headers: { admintoken: adminToken }
+            headers: { admintoken: finalAdminToken }
         });
 
         const { token, instance } = response.data;
@@ -20,15 +23,15 @@ class InstanceService {
             name,
             instanceKey: instance.id,
             token: token,
-            apiUrl: apiUrl,
-            adminToken: adminToken,
+            apiUrl: finalApiUrl,
+            adminToken: finalAdminToken,
             userId: userId,
             status: 'disconnected'
         });
 
         // Set webhook automatically
         try {
-            await this.#setWebhook(token, apiUrl);
+            await this.#setWebhook(token, finalApiUrl);
         } catch (error) {
             console.error('Error auto-setting webhook:', error);
             // We don't throw here to not break the instance creation if only webhook fails
@@ -157,6 +160,14 @@ class InstanceService {
             groupjid,
             announce
         }, {
+            headers: { token }
+        });
+        return response.data;
+    }
+
+    async fetchAllGroups(token, apiUrl) {
+        const client = this.#getClient(apiUrl);
+        const response = await client.get('/group/listAll', {
             headers: { token }
         });
         return response.data;
