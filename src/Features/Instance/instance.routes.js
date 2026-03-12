@@ -5,8 +5,10 @@ const instanceController = require('./instance.controller');
 const authMiddleware = require('../../Middlewares/auth');
 
 router.post('/init', authMiddleware, instanceController.init);
-router.post('/:id/connect', authMiddleware, instanceController.connect);
-router.get('/:id/status', authMiddleware, instanceController.status);
+router.get('/connect/:id', authMiddleware, instanceController.connect);
+router.get('/status/:id', authMiddleware, instanceController.status);
 router.get('/', authMiddleware, instanceController.list);
+router.patch('/:id', authMiddleware, instanceController.update);
+router.delete('/:id', authMiddleware, instanceController.delete);
 
 module.exports = router;

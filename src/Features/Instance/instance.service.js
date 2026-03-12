@@ -165,6 +165,33 @@ class InstanceService {
         return response.data;
     }
 
+    async updateInstance(instanceId, data) {
+        const instance = await WhatsAppInstance.findByPk(instanceId);
+        if (!instance) throw new Error('Instance not found');
+
+        await instance.update(data);
+        return instance;
+    }
+
+    async deleteInstance(instanceId) {
+        const instance = await WhatsAppInstance.findByPk(instanceId);
+        if (!instance) throw new Error('Instance not found');
+
+        // Delete from Uazapi first
+        try {
+            const client = this.#getClient(instance.apiUrl);
+            await client.delete('/instance/delete', {
+                headers: { token: instance.token }
+            });
+        } catch (error) {
+            console.error('Error deleting from Uazapi during local delete:', error.message);
+            // We continue even if Uazapi fails to ensure local cleanup
+        }
+
+        await instance.destroy();
+        return { success: true };
+    }
+
     async fetchAllGroups(token, apiUrl) {
         const client = this.#getClient(apiUrl);
         const response = await client.get('/group/listAll', {
