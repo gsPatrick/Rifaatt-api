@@ -42,7 +42,10 @@ class ReportService {
             }]
         });
 
-        const totalValue = totalReservations.reduce((acc, curr) => acc + parseFloat(curr.Raffle?.ticketValue || 0), 0);
+        const totalValue = totalReservations.reduce((acc, curr) => {
+            const val = parseFloat(curr.Raffle?.ticketValue);
+            return acc + (isNaN(val) ? 0 : val);
+        }, 0);
 
         return {
             chartData: results,
@@ -130,7 +133,10 @@ class ReportService {
             }]
         });
 
-        const totalValue = totalReservations.reduce((acc, curr) => acc + parseFloat(curr.Raffle?.ticketValue || 0), 0);
+        const totalValue = totalReservations.reduce((acc, curr) => {
+            const val = parseFloat(curr.Raffle?.ticketValue);
+            return acc + (isNaN(val) ? 0 : val);
+        }, 0);
 
         // Recent activities (last 5 reservations)
         const recentReservations = await Reservation.findAll({
