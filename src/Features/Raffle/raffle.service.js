@@ -282,7 +282,13 @@ class RaffleService {
 
         if (!Array.isArray(groups)) return [];
 
-        return groups.filter(g => g.isAdmin || g.isGroupAdmin || g.isOwner || g.isSuperAdmin);
+        // Correctly filter by OwnerIsAdmin and map to frontend fields
+        return groups
+            .filter(g => g.OwnerIsAdmin === true)
+            .map(g => ({
+                id: g.JID,
+                subject: g.Name
+            }));
     }
 }
 
