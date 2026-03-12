@@ -28,6 +28,28 @@ class UserController {
             res.status(500).json({ error: error.message });
         }
     }
+
+    async updateStatus(req, res) {
+        try {
+            const { id } = req.params;
+            const { status } = req.body;
+            await userService.updateUserStatus(id, status);
+            res.json({ message: 'Status atualizado com sucesso' });
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
+    async updatePlan(req, res) {
+        try {
+            const { id } = req.params;
+            const { planId } = req.body;
+            await userService.updateUserPlan(id, planId);
+            res.json({ message: 'Plano atualizado com sucesso' });
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    }
 }
 
 module.exports = new UserController();

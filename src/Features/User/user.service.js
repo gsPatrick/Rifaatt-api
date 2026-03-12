@@ -22,7 +22,21 @@ class UserService {
     }
 
     async listUsers() {
-        return await User.findAll({ attributes: { exclude: ['password'] } });
+        const { WhatsAppInstance, GroupActivation, Plan } = require('../../Models');
+        return await User.findAll({ 
+            attributes: { exclude: ['password'] },
+            include: [
+                { model: Plan, attributes: ['name'] }
+            ]
+        });
+    }
+
+    async updateUserStatus(userId, status) {
+        return await User.update({ status }, { where: { id: userId } });
+    }
+
+    async updateUserPlan(userId, planId) {
+        return await User.update({ planId }, { where: { id: userId } });
     }
 }
 

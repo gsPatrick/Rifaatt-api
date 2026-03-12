@@ -42,6 +42,10 @@ User.init({
         type: DataTypes.ENUM('ADMIN', 'CLIENT'),
         defaultValue: 'CLIENT',
     },
+    status: {
+        type: DataTypes.ENUM('ACTIVE', 'BLOCKED'),
+        defaultValue: 'ACTIVE',
+    },
     planId: {
         type: DataTypes.UUID,
         allowNull: true,
