@@ -55,7 +55,7 @@ class WebhookService {
 
                 if (result.success) {
                     const reaction = result.status === 'PARTIAL' ? '❕' : '✅';
-                    await InstanceService.reactToMessage(instance.token, chatid, reaction, messageId);
+                    await InstanceService.reactToMessage(instance.token, chatid, reaction, messageId, instance.apiUrl);
 
                     let replyMsg = `📝 *Reserva para ${msg.senderName || 'Você'}*:\n`;
                     replyMsg += `✅ Confirmados: ${result.reserved.join(', ')}\n`;
@@ -64,10 +64,10 @@ class WebhookService {
                     }
                     replyMsg += `\n💰 Total: R$ ${(result.totalReserved * raffle.ticketValue).toFixed(2)}\n🔑 PIX: ${raffle.pixKey}\n📌 Após pagar, envie o comprovante.`;
 
-                    await this.reply(instance.token, chatid, replyMsg);
+                    await this.reply(instance.token, chatid, replyMsg, instance.apiUrl);
                 } else if (result.status === 'ALL_TAKEN') {
-                    await InstanceService.reactToMessage(instance.token, chatid, '❌', messageId);
-                    await this.reply(instance.token, chatid, `❌ Desculpe, ${msg.senderName || 'usuário'}, mas todos os números solicitados (${result.alreadyTaken.join(', ')}) já foram reservados.`);
+                    await InstanceService.reactToMessage(instance.token, chatid, '❌', messageId, instance.apiUrl);
+                    await this.reply(instance.token, chatid, `❌ Desculpe, ${msg.senderName || 'usuário'}, mas todos os números solicitados (${result.alreadyTaken.join(', ')}) já foram reservados.`, instance.apiUrl);
                 }
                 return;
             }
@@ -75,7 +75,7 @@ class WebhookService {
             // 2. Commands Handler (Starting with !)
             if (command.startsWith('!')) {
                 // Admin Validation Check
-                const groupInfo = await InstanceService.getGroupInfo(instance.token, chatid);
+                const groupInfo = await InstanceService.getGroupInfo(instance.token, chatid, instance.apiUrl);
                 const participants = groupInfo.Participants || [];
                 const senderParticipant = participants.find(p => p.JID === sender);
                 const isAdmin = senderParticipant ? senderParticipant.IsAdmin : false;
@@ -83,14 +83,14 @@ class WebhookService {
                 // User Commands (No Admin Required)
                 if (command === '!valor') {
                     if (!raffle) return;
-                    await this.reply(instance.token, chatid, `💰 *Valor da Dezena*: R$ ${raffle.ticketValue}\n🔑 *PIX*: ${raffle.pixKey}`);
+                    await this.reply(instance.token, chatid, `💰 *Valor da Dezena*: R$ ${raffle.ticketValue}\n🔑 *PIX*: ${raffle.pixKey}`, instance.apiUrl);
                     return;
                 }
 
                 if (command === '!disponivel' || command === '!lista') {
                     if (!raffle) return;
                     const list = await RaffleService.generateVisualList(raffle.id);
-                    await this.reply(instance.token, chatid, list);
+                    await this.reply(instance.token, chatid, list, instance.apiUrl);
                     return;
                 }
 
@@ -102,28 +102,28 @@ class WebhookService {
                         if (!raffle) return;
                         raffle.title = args.join(' ');
                         await raffle.save();
-                        await this.reply(instance.token, chatid, `✅ Título atualizado: *${raffle.title}*`);
+                        await this.reply(instance.token, chatid, `✅ Título atualizado: *${raffle.title}*`, instance.apiUrl);
                         break;
 
                     case '!premio':
                         if (!raffle) return;
                         raffle.prize = args.join(' ');
                         await raffle.save();
-                        await this.reply(instance.token, chatid, `✅ Prêmio atualizado: *${raffle.prize}*`);
+                        await this.reply(instance.token, chatid, `✅ Prêmio atualizado: *${raffle.prize}*`, instance.apiUrl);
                         break;
 
                     case '!pix':
                         if (!raffle) return;
                         raffle.pixKey = args[0];
                         await raffle.save();
-                        await this.reply(instance.token, chatid, `✅ Chave PIX atualizada: *${raffle.pixKey}*`);
+                        await this.reply(instance.token, chatid, `✅ Chave PIX atualizada: *${raffle.pixKey}*`, instance.apiUrl);
                         break;
 
                     case '!valor_dezena':
                         if (!raffle) return;
                         raffle.ticketValue = parseFloat(args[0]);
                         await raffle.save();
-                        await this.reply(instance.token, chatid, `✅ Valor da dezena atualizado: *R$ ${raffle.ticketValue.toFixed(2)}*`);
+                        await this.reply(instance.token, chatid, `✅ Valor da dezena atualizado: *R$ ${raffle.ticketValue.toFixed(2)}*`, instance.apiUrl);
                         break;
 
                     case '!iniciar':
@@ -136,12 +136,12 @@ class WebhookService {
                             if (!raffle.ticketValue) missing.push('Valor');
 
                             if (missing.length > 0) {
-                                return this.reply(instance.token, chatid, `⚠️ *Erro*: Faltam os seguintes campos para iniciar: ${missing.join(', ')}.\nUse !titulo, !premio, !pix ou !valor_dezena.`);
+                                return this.reply(instance.token, chatid, `⚠️ *Erro*: Faltam os seguintes campos para iniciar: ${missing.join(', ')}.\nUse !titulo, !premio, !pix ou !valor_dezena.`, instance.apiUrl);
                             }
 
                             raffle.status = 'ACTIVE';
                             await raffle.save();
-                            await this.reply(instance.token, chatid, "🚀 *Rifa Iniciada!* Sucesso nas vendas! 🍀");
+                            await this.reply(instance.token, chatid, "🚀 *Rifa Iniciada!* Sucesso nas vendas! 🍀", instance.apiUrl);
                         } else {
                             await Raffle.create({
                                 groupJid: chatid,
@@ -152,45 +152,45 @@ class WebhookService {
                                 ticketValue: 10.00,
                                 pixKey: 'Chave PIX'
                             });
-                            await this.reply(instance.token, chatid, "📝 *Rifa Preparada!* Use !titulo, !premio, !pix e !valor_dezena para configurar. Depois use !iniciar.");
+                            await this.reply(instance.token, chatid, "📝 *Rifa Preparada!* Use !titulo, !premio, !pix e !valor_dezena para configurar. Depois use !iniciar.", instance.apiUrl);
                         }
                         break;
 
                     case '!finalizar':
                         if (!raffle) return;
                         // Use updateGroupAnnounce to lock group
-                        await InstanceService.updateGroupAnnounce(instance.token, chatid, true);
+                        await InstanceService.updateGroupAnnounce(instance.token, chatid, true, instance.apiUrl);
 
                         raffle.status = 'FINALIZED';
                         await raffle.save();
 
                         const time = args.join(' ');
                         const timeMsg = time ? ` às *${time}*` : '';
-                        await this.reply(instance.token, chatid, `🛑 *Vendas Encerradas${timeMsg}!* O grupo agora está bloqueado para novas mensagens.`);
+                        await this.reply(instance.token, chatid, `🛑 *Vendas Encerradas${timeMsg}!* O grupo agora está bloqueado para novas mensagens.`, instance.apiUrl);
                         break;
 
                     case '!pago':
                         if (!raffle) return;
                         const targetJid = this.getMentionedJid(msg, args);
-                        if (!targetJid) return this.reply(instance.token, chatid, "❌ Mencione o usuário. Ex: !pago @user");
+                        if (!targetJid) return this.reply(instance.token, chatid, "❌ Mencione o usuário. Ex: !pago @user", instance.apiUrl);
 
                         const updatedCount = await RaffleService.markAsPaid(raffle.id, targetJid);
-                        await this.reply(instance.token, chatid, `✅ Confirmado! ${updatedCount} números marcados como PAGO.`);
+                        await this.reply(instance.token, chatid, `✅ Confirmado! ${updatedCount} números marcados como PAGO.`, instance.apiUrl);
                         break;
 
                     case '!add':
                         const addNum = args[0]?.replace(/\D/g, '');
-                        if (!addNum) return this.reply(instance.token, chatid, "❌ Informe o número. Ex: !add 551199999999");
-                        await InstanceService.updateGroupParticipants(instance.token, chatid, 'add', [`${addNum}@s.whatsapp.net`]);
-                        await this.reply(instance.token, chatid, `➕ Solicitada adição de ${addNum}.`);
+                        if (!addNum) return this.reply(instance.token, chatid, "❌ Informe o número. Ex: !add 551199999999", instance.apiUrl);
+                        await InstanceService.updateGroupParticipants(instance.token, chatid, 'add', [`${addNum}@s.whatsapp.net`], instance.apiUrl);
+                        await this.reply(instance.token, chatid, `➕ Solicitada adição de ${addNum}.`, instance.apiUrl);
                         break;
 
                     case '!remover':
                         const remNum = args[0]?.replace(/\D/g, '') || this.getMentionedJid(msg, args);
-                        if (!remNum) return this.reply(instance.token, chatid, "❌ Mencione ou informe o número.");
+                        if (!remNum) return this.reply(instance.token, chatid, "❌ Mencione ou informe o número.", instance.apiUrl);
                         const finalRemJid = remNum.includes('@') ? remNum : `${remNum}@s.whatsapp.net`;
-                        await InstanceService.updateGroupParticipants(instance.token, chatid, 'remove', [finalRemJid]);
-                        await this.reply(instance.token, chatid, `➖ Removido: ${finalRemJid.split('@')[0]}`);
+                        await InstanceService.updateGroupParticipants(instance.token, chatid, 'remove', [finalRemJid], instance.apiUrl);
+                        await this.reply(instance.token, chatid, `➖ Removido: ${finalRemJid.split('@')[0]}`, instance.apiUrl);
                         break;
 
                     case '!log':
@@ -205,7 +205,7 @@ class WebhookService {
                         logMsg += `✅ Pagos: ${paid.length} (R$ ${totalSent.toFixed(2)})\n`;
                         logMsg += `⏳ Pendentes: ${reservations.length - paid.length} (R$ ${pendingValue.toFixed(2)})\n`;
                         logMsg += `💰 Total Geral: R$ ${(reservations.length * raffle.ticketValue).toFixed(2)}`;
-                        await this.reply(instance.token, chatid, logMsg);
+                        await this.reply(instance.token, chatid, logMsg, instance.apiUrl);
                         break;
                 }
             }
@@ -216,8 +216,8 @@ class WebhookService {
         }
     }
 
-    async reply(token, chatid, text) {
-        return await InstanceService.sendMessage(token, chatid, text);
+    async reply(token, chatid, text, apiUrl) {
+        return await InstanceService.sendMessage(token, chatid, text, apiUrl);
     }
 
     getMentionedJid(msg, args) {

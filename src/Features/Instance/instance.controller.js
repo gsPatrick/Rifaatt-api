@@ -3,8 +3,13 @@ const instanceService = require('./instance.service');
 class InstanceController {
     async init(req, res) {
         try {
-            const { name, userId } = req.body;
-            const instance = await instanceService.initInstance(name, userId || req.user.id);
+            const { name, userId, apiUrl, adminToken } = req.body;
+            const instance = await instanceService.initInstance(
+                apiUrl,
+                adminToken,
+                name,
+                userId || req.user.id
+            );
             res.status(201).json(instance);
         } catch (error) {
             res.status(400).json({ error: error.message });

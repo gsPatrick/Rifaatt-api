@@ -192,7 +192,7 @@ class RaffleService {
         if (instance.status !== 'connected') throw new Error('A instância deve estar conectada para criar um grupo.');
 
         // 1. Create group via UazAPI
-        const groupData = await InstanceService.createGroup(instance.token, groupName);
+        const groupData = await InstanceService.createGroup(instance.token, groupName, [], instance.apiUrl);
         if (!groupData.id) throw new Error('Falha ao obter JID do novo grupo.');
 
         // 2. Activate group in our database

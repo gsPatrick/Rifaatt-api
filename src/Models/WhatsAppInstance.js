@@ -18,6 +18,15 @@ WhatsAppInstance.init({
         allowNull: false,
         unique: true,
     },
+    apiUrl: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        defaultValue: 'https://api.uazapi.com',
+    },
+    adminToken: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
     token: {
         type: DataTypes.STRING,
         allowNull: false,
