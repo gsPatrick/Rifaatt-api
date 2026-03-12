@@ -11,6 +11,28 @@ app.use(express.json());
 
 app.use('/api', routes);
 
+// Create default admin if not exists
+const User = require('./src/Models/User');
+const createDefaultAdmin = async () => {
+    try {
+        const adminEmail = 'admin@admin.com';
+        const adminExists = await User.findOne({ where: { email: adminEmail } });
+        if (!adminExists) {
+            await User.create({
+                name: 'Administrador',
+                email: adminEmail,
+                password: 'admin',
+                role: 'ADMIN',
+                status: 'ACTIVE'
+            });
+            console.log('Default admin created: admin@admin.com / admin');
+        }
+    } catch (error) {
+        console.error('Error creating default admin:', error);
+    }
+};
+createDefaultAdmin();
+
 // Error handler
 app.use((err, req, res, next) => {
     console.error(err.stack);
