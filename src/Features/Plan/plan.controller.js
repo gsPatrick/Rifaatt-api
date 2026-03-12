@@ -3,9 +3,11 @@ const { Plan } = require('../../Models');
 class PlanController {
     async list(req, res) {
         try {
-            const plans = await Plan.findAll({
-                where: req.user?.role !== 'ADMIN' ? { isPublic: true, status: 'active' } : {}
-            });
+            // If not logged in or not admin, show only public active plans
+            const isAdmin = req.user?.role === 'ADMIN';
+            const where = isAdmin ? {} : { isPublic: true, status: 'active' };
+            
+            const plans = await Plan.findAll({ where });
             return res.json(plans);
         } catch (error) {
             return res.status(500).json({ error: error.message });
