@@ -48,6 +48,10 @@ Raffle.init({
     instanceId: {
         type: DataTypes.UUID,
         allowNull: false,
+        references: {
+            model: 'whatsapp_instances',
+            key: 'id',
+        },
     },
 }, {
     sequelize,

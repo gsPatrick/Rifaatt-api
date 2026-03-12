@@ -11,6 +11,9 @@ WhatsAppInstance.belongsTo(User, { foreignKey: 'userId' });
 WhatsAppInstance.hasMany(GroupActivation, { foreignKey: 'instanceId' });
 GroupActivation.belongsTo(WhatsAppInstance, { foreignKey: 'instanceId' });
 
+WhatsAppInstance.hasMany(Raffle, { foreignKey: 'instanceId' });
+Raffle.belongsTo(WhatsAppInstance, { foreignKey: 'instanceId' });
+
 Raffle.hasMany(Reservation, { foreignKey: 'raffleId' });
 Reservation.belongsTo(Raffle, { foreignKey: 'raffleId' });
 

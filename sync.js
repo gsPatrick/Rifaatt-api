@@ -1,9 +1,5 @@
 const sequelize = require('./src/Config/database');
-require('./src/Models/User');
-require('./src/Models/WhatsAppInstance');
-require('./src/Models/GroupActivation');
-require('./src/Models/Raffle');
-require('./src/Models/Reservation');
+require('./src/Models');
 
 async function syncDB() {
     try {
