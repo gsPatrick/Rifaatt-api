@@ -16,7 +16,8 @@ class InstanceService {
         const instanceCount = await WhatsAppInstance.count({ where: { userId } });
         const limit = user.Plan ? user.Plan.instanceLimit : 1; // Default to 1 if no plan
 
-        if (instanceCount >= limit) {
+        // Admin bypasses limits
+        if (user.role !== 'ADMIN' && instanceCount >= limit) {
             throw new Error(`Limite de instâncias atingido para o seu plano (${limit}).`);
         }
 

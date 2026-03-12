@@ -7,6 +7,15 @@ const { Op } = require('sequelize');
 
 class RaffleService {
     async createRaffle(data) {
+        // Validation: Verify if the group is active
+        const activation = await GroupActivation.findOne({
+            where: { groupJid: data.groupJid, status: 'active' }
+        });
+
+        if (!activation) {
+            throw new Error('Este grupo não está ativado. Ative o grupo antes de criar uma rifa.');
+        }
+
         return await Raffle.create(data);
     }
 
@@ -230,7 +239,7 @@ class RaffleService {
         });
 
         const limit = user.Plan ? user.Plan.groupLimit : 1;
-        if (groupCount >= limit) {
+        if (user.role !== 'ADMIN' && groupCount >= limit) {
             throw new Error(`Limite de grupos ativos atingido para o seu plano (${limit}).`);
         }
 
@@ -273,7 +282,7 @@ class RaffleService {
             });
 
             const limit = user.Plan ? user.Plan.groupLimit : 1;
-            if (groupCount >= limit) {
+            if (user.role !== 'ADMIN' && groupCount >= limit) {
                 throw new Error(`Limite de grupos ativos atingido para o seu plano (${limit}).`);
             }
         }
