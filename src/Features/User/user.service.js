@@ -1,17 +1,23 @@
-const User = require('../../Models/User');
+const { User, Plan } = require('../../Models');
 const jwt = require('jsonwebtoken');
 
 class UserService {
     async createUser(data) {
         const user = await User.create(data);
+        const userWithPlan = await User.findByPk(user.id, {
+            include: [{ model: Plan }]
+        });
         const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, {
             expiresIn: '7d',
         });
-        return { user, token };
+        return { user: userWithPlan, token };
     }
 
     async login(email, password) {
-        const user = await User.findOne({ where: { email } });
+        const user = await User.findOne({ 
+            where: { email },
+            include: [{ model: Plan }]
+        });
         if (!user || !(await user.checkPassword(password))) {
             throw new Error('Invalid email or password');
         }
@@ -19,6 +25,14 @@ class UserService {
             expiresIn: '7d',
         });
         return { user, token };
+    }
+
+    async getProfile(userId) {
+        const user = await User.findByPk(userId, {
+            attributes: { exclude: ['password'] },
+            include: [{ model: Plan }]
+        });
+        return user;
     }
 
     async listUsers() {
