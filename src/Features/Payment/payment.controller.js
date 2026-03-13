@@ -1,5 +1,5 @@
 const AsaasService = require('../../Services/asaas.service');
-const { User, Plan } = require('../../Models');
+const { User, Plan, SystemSetting } = require('../../Models');
 
 class PaymentController {
     async createCheckout(req, res) {
@@ -73,6 +73,16 @@ class PaymentController {
 
     async webhook(req, res) {
         try {
+            // Validate Webhook Token if configured
+            const dbSecret = await SystemSetting.findOne({ where: { key: 'asaas_webhook_secret' } });
+            if (dbSecret?.value) {
+                const token = req.headers['asaas-access-token'];
+                if (token !== dbSecret.value) {
+                    console.warn('Unauthorized Asaas Webhook attempt blocked.');
+                    return res.status(401).json({ error: 'Unauthorized' });
+                }
+            }
+
             const { event, payment } = req.body;
             console.log('Asaas Webhook Received:', event, payment?.id);
 

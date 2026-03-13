@@ -3,18 +3,30 @@ const { SystemSetting } = require('../Models');
 require('dotenv').config();
 
 class AsaasService {
-    constructor() {
-        this.baseUrl = process.env.NODE_ENV === 'production' 
-            ? 'https://www.asaas.com/api/v3' 
-            : 'https://sandbox.asaas.com/api/v3';
+    async getSettings() {
+        const settings = await SystemSetting.findAll({
+            where: {
+                key: ['asaas_api_key', 'asaas_environment']
+            }
+        });
+        
+        return settings.reduce((acc, curr) => {
+            acc[curr.key] = curr.value;
+            return acc;
+        }, {});
     }
 
     async getClient() {
-        const dbKey = await SystemSetting.findOne({ where: { key: 'asaas_api_key' } });
-        const apiKey = dbKey?.value || process.env.ASAAS_API_KEY;
+        const settings = await this.getSettings();
+        const apiKey = settings.asaas_api_key || process.env.ASAAS_API_KEY;
+        const env = settings.asaas_environment || process.env.NODE_ENV || 'development';
+        
+        const baseUrl = (env === 'production') 
+            ? 'https://www.asaas.com/api/v3' 
+            : 'https://sandbox.asaas.com/api/v3';
 
         return axios.create({
-            baseURL: this.baseUrl,
+            baseURL: baseUrl,
             headers: {
                 'access_token': apiKey,
                 'Content-Type': 'application/json'
