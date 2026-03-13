@@ -20,6 +20,15 @@ class UserController {
         }
     }
 
+    async me(req, res) {
+        try {
+            const user = await userService.getProfile(req.user.id);
+            res.json(user);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+
     async list(req, res) {
         try {
             const users = await userService.listUsers();
