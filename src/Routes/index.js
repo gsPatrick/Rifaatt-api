@@ -8,6 +8,7 @@ const raffleRoutes = require('../Features/Raffle/raffle.routes');
 const paymentRoutes = require('../Features/Payment/payment.routes');
 const reportRoutes = require('../Features/Report/report.routes');
 const planRoutes = require('../Features/Plan/plan.routes');
+const masterRoutes = require('../Features/Master/master.routes');
 
 router.use('/users', userRoutes);
 router.use('/instances', instanceRoutes);
@@ -16,5 +17,6 @@ router.use('/raffles', raffleRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/reports', reportRoutes);
 router.use('/plans', planRoutes);
+router.use('/master', masterRoutes);
 
 module.exports = router;

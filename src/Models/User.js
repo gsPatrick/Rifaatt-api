@@ -53,6 +53,14 @@ User.init({
             model: 'plans',
             key: 'id'
         }
+    },
+    document: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    asaasCustomerId: {
+        type: DataTypes.STRING,
+        allowNull: true,
     }
 }, {
     sequelize,

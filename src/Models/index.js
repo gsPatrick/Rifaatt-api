@@ -4,6 +4,7 @@ const Raffle = require('./Raffle');
 const Reservation = require('./Reservation');
 const WhatsAppInstance = require('./WhatsAppInstance');
 const GroupActivation = require('./GroupActivation');
+const SystemSetting = require('./SystemSetting');
 
 // Associations
 User.belongsTo(Plan, { foreignKey: 'planId' });
@@ -30,5 +31,6 @@ module.exports = {
     Raffle,
     Reservation,
     WhatsAppInstance,
-    GroupActivation
+    GroupActivation,
+    SystemSetting
 };
