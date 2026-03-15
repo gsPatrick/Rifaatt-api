@@ -582,7 +582,7 @@ class RaffleService {
             const groupMsg = `📢 *RESULTADO DA RIFA* 📢\n\nO grande vencedor da rifa *${raffle.title}* foi @${mentionJid.split('@')[0]} (*${winner.buyerName}*) com o número *${winningNumber}*! 🏆🥂\n\nParabéns ao ganhador!`;
             await InstanceService.sendMessage(instance.token, raffle.groupJid, groupMsg, instance.apiUrl, [mentionJid]);
         } else {
-            const groupMsg = `📢 *RESULTADO DA RIFA* 📢\n\nA rifa *${raffle.title}* foi encerrada e o número sorteado foi *${winningNumber}*!\n\n⚠️ Como este número estava livre (não foi vendido) ou não teve o pagamento confirmado, não teve ganhadores.`;
+            const groupMsg = `📢 *RESULTADO DA RIFA* 📢\n\nA rifa *${raffle.title}* foi encerrada e a Dezena sorteada foi *${winningNumber}*!\n\n⚠️ Como este número estava livre (não foi vendido) ou não teve o pagamento confirmado, não teve ganhadores.`;
             await InstanceService.sendMessage(instance.token, raffle.groupJid, groupMsg, instance.apiUrl);
         }
 
