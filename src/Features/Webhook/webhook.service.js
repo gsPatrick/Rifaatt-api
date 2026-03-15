@@ -10,9 +10,13 @@ class WebhookService {
         const { event, instance: instanceKey, data } = payload;
         console.log(`[Webhook] Event Received: ${event} | Instance: ${instanceKey}`);
 
-        if (event !== 'message' && event !== 'messages') return;
+        if (event !== 'message' && event !== 'messages') {
+            console.log(`[Webhook] Skipping event type: ${event}`);
+            return;
+        }
 
         const messages = Array.isArray(data) ? data : [data];
+        console.log(`[Webhook] Processing ${messages.length} messages...`);
 
         for (const msg of messages) {
             await this.processMessage(instanceKey, msg);
@@ -28,7 +32,11 @@ class WebhookService {
         console.log(`[Webhook] Processing Message: "${text}" | From: ${sender} | Chat: ${chatid}`);
 
         const instance = await WhatsAppInstance.findOne({ where: { instanceKey } });
-        if (!instance) return;
+        if (!instance) {
+            console.log(`[Webhook] Instance NOT FOUND in database for key: ${instanceKey}`);
+            return;
+        }
+        console.log(`[Webhook] Instance Found: ${instance.name} (ID: ${instance.id})`);
 
         // Verify active group
         const activation = await GroupActivation.findOne({
@@ -41,10 +49,22 @@ class WebhookService {
         });
 
         if (!activation) {
-            console.log(`[Webhook] Group not active or not found: ${chatid}`);
+            console.log(`[Webhook] Group activation NOT FOUND or INACTIVE or EXPIRED for group: ${chatid} | Instance: ${instance.id}`);
+            // Let's check why it's not active
+            const anyActivation = await GroupActivation.findOne({ where: { groupJid: chatid, instanceId: instance.id } });
+            if (anyActivation) {
+                console.log(`[Webhook] Found activation but: Status=${anyActivation.status}, Exp=${anyActivation.expirationDate}`);
+            } else {
+                console.log(`[Webhook] No GroupActivation record found at all for this JID and Instance.`);
+            }
             return;
         }
-        if (!text) return;
+        console.log(`[Webhook] Group Activation Valid: ${activation.groupName}`);
+
+        if (!text) {
+            console.log(`[Webhook] No text content in message, skipping.`);
+            return;
+        }
 
         const cleanText = text.trim();
         const args = cleanText.split(/ +/);

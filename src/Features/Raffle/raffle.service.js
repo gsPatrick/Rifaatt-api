@@ -20,7 +20,8 @@ class RaffleService {
     }
 
     async getActiveRaffleByGroup(groupJid) {
-        return await Raffle.findOne({
+        console.log(`[RaffleService] Searching for active raffle in group: ${groupJid}`);
+        const raffle = await Raffle.findOne({
             where: { groupJid, status: 'ACTIVE' },
             include: [
                 { model: Reservation, required: false },
@@ -28,6 +29,12 @@ class RaffleService {
             ],
             order: [['createdAt', 'DESC']]
         });
+        if (raffle) {
+            console.log(`[RaffleService] Active raffle FOUND: ${raffle.title} (ID: ${raffle.id})`);
+        } else {
+            console.log(`[RaffleService] No active raffle found in DB for group: ${groupJid}`);
+        }
+        return raffle;
     }
 
     async getAnimalForNumber(numStr) {

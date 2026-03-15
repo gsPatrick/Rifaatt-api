@@ -3,6 +3,10 @@ const WebhookService = require('./webhook.service');
 class WebhookController {
     async handle(req, res) {
         try {
+            console.log('--- NEW WEBHOOK PAYLOAD ---');
+            console.log(JSON.stringify(req.body, null, 2));
+            console.log('---------------------------');
+
             // Uazapi sends the event in the body
             await WebhookService.handleEvent(req.body);
 

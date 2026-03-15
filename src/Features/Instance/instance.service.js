@@ -112,13 +112,20 @@ class InstanceService {
 
     async sendMessage(token, number, text, apiUrl) {
         const client = this.#getClient(apiUrl);
-        const response = await client.post('/send/text', {
-            number,
-            text
-        }, {
-            headers: { token }
-        });
-        return response.data;
+        console.log(`[InstanceService] Sending message to ${number} | Token: ${token.substring(0, 5)}...`);
+        try {
+            const response = await client.post('/send/text', {
+                number,
+                text
+            }, {
+                headers: { token }
+            });
+            console.log(`[InstanceService] Send Message Response SUCCESS`);
+            return response.data;
+        } catch (error) {
+            console.error(`[InstanceService] Send Message ERROR:`, error.response?.data || error.message);
+            throw error;
+        }
     }
 
     async createGroup(token, name, participants = [], apiUrl) {
