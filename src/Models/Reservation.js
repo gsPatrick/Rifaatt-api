@@ -37,6 +37,12 @@ Reservation.init({
     sequelize,
     modelName: 'Reservation',
     tableName: 'reservations',
+    indexes: [
+        {
+            unique: true,
+            fields: ['raffle_id', 'number']
+        }
+    ]
 });
 
 module.exports = Reservation;

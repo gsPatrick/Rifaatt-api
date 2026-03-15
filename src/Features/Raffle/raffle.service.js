@@ -16,6 +16,24 @@ class RaffleService {
             throw new Error('Este grupo não está ativado. Ative o grupo antes de criar uma rifa.');
         }
 
+        // Check if there is already a raffle for this group that is NOT finished
+        const existingRaffle = await Raffle.findOne({
+            where: {
+                groupJid: data.groupJid,
+                status: { [Op.in]: ['CREATED', 'PENDING', 'ACTIVE'] }
+            }
+        });
+
+        if (existingRaffle) {
+            // If it's active, block ticketValue changes
+            if (existingRaffle.status === 'ACTIVE' && data.ticketValue && parseFloat(data.ticketValue) !== parseFloat(existingRaffle.ticketValue)) {
+                throw new Error('Não é possível alterar o valor da dezena de uma rifa ativa.');
+            }
+            
+            // Update existing raffle
+            return await existingRaffle.update(data);
+        }
+
         return await Raffle.create(data);
     }
 
@@ -126,17 +144,33 @@ class RaffleService {
     }
 
     async reserveNumbers(raffleId, numbersStr, buyerName, buyerPhone) {
+        const raffle = await Raffle.findByPk(raffleId);
+        if (!raffle) throw new Error('Rifa não encontrada.');
+
+        // Determine padding based on numbersCount (2 for 100, 3 for 1000)
+        const padSize = (raffle.numbersCount || 100).toString().length - 1;
+        const maxNumber = raffle.numbersCount || 100;
+
         // Parse numbers: handles 3 5 6 or 45/34/12 or 01,02 or 01-02 or 01.02 or 01:02 or multiline
         const numbers = numbersStr.split(/[\s,.\-/:\n]+/)
             .filter(n => n.length > 0)
-            .map(n => n.padStart(2, '0'))
+            .map(n => n.padStart(padSize, '0'))
             .filter((v, i, a) => a.indexOf(v) === i);
 
         if (numbers.length === 0) {
             return { success: false, error: 'Nenhum número válido fornecido.' };
         }
 
-        const invalidNumbers = numbers.filter(num => !/^\d{2,3}$/.test(num));
+        // Validate range and format
+        const outOfRange = numbers.filter(num => parseInt(num) >= maxNumber);
+        if (outOfRange.length > 0) {
+            return {
+                success: false,
+                error: `Número(s) fora do intervalo (0-${maxNumber - 1}): ${outOfRange.join(', ')}.`
+            };
+        }
+
+        const invalidNumbers = numbers.filter(num => isNaN(parseInt(num)));
         if (invalidNumbers.length > 0) {
             return {
                 success: false,
@@ -397,12 +431,15 @@ class RaffleService {
         });
         if (!raffle) throw new Error('Rifa não encontrada.');
 
-        raffle.winningNumber = winningNumber;
+        const padSize = (raffle.numbersCount || 100).toString().length - 1;
+        const normalizedNumber = winningNumber.toString().padStart(padSize, '0');
+
+        raffle.winningNumber = normalizedNumber;
         raffle.status = 'FINISHED';
         await raffle.save();
 
         const winner = await Reservation.findOne({
-            where: { raffleId, number: winningNumber, status: 'PAID' }
+            where: { raffleId, number: normalizedNumber, status: 'PAID' }
         });
 
         const instance = raffle.WhatsAppInstance;

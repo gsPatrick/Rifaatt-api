@@ -173,9 +173,10 @@ class WebhookService {
                     }
 
                     await this.reply(instance.token, chatid, replyMsg, instance.apiUrl);
-                } else if (result.status === 'ALL_TAKEN') {
+                } else {
+                    // Handle range errors or other validation errors
                     await InstanceService.reactToMessage(instance.token, chatid, '❌', messageId, instance.apiUrl);
-                    await this.reply(instance.token, chatid, `❌ Desculpe, ${msg.senderName || 'usuário'}, mas todos os números solicitados (${result.alreadyTaken.join(', ')}) já foram reservados.`, instance.apiUrl);
+                    await this.reply(instance.token, chatid, `❌ *Erro na reserva:* ${result.error}`, instance.apiUrl);
                 }
                 return;
             }
