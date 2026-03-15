@@ -19,6 +19,16 @@ class RaffleService {
         return await Raffle.create(data);
     }
 
+    async getLatestRaffleByGroup(groupJid) {
+        return await Raffle.findOne({
+            where: {
+                groupJid,
+                status: { [Op.in]: ['CREATED', 'ACTIVE'] }
+            },
+            order: [['createdAt', 'DESC']]
+        });
+    }
+
     async getActiveRaffleByGroup(groupJid) {
         console.log(`[RaffleService] Searching for active raffle in group: ${groupJid}`);
         const raffle = await Raffle.findOne({

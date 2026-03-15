@@ -170,7 +170,7 @@ class WebhookService {
                 }
 
                 if (command === '!disponivel' || command === '!lista') {
-                    if (!raffle) return;
+                    if (!raffle || raffle.status !== 'ACTIVE') return;
                     const list = await RaffleService.generateVisualList(raffle.id);
                     await this.reply(instance.token, chatid, list, instance.apiUrl);
                     return;
@@ -179,6 +179,11 @@ class WebhookService {
 
                 // Admin Commands
                 if (!isAdmin) return;
+
+                // For admin config, we want the LATEST raffle (can be CREATED or ACTIVE)
+                if (!raffle || raffle.status === 'CREATED') {
+                    raffle = await RaffleService.getLatestRaffleByGroup(chatid);
+                }
 
                 switch (command) {
                     case '!titulo':
@@ -218,6 +223,7 @@ class WebhookService {
                         await this.reply(instance.token, chatid, `✅ *Valor da dezena atualizado:* R$ ${raffle.ticketValue.toFixed(2)}`, instance.apiUrl);
                         break;
 
+                    case '!inciar':
                     case '!iniciar':
                         if (raffle) {
                             if (raffle.status === 'ACTIVE') return this.reply(instance.token, chatid, "⚠️ Já existe uma rifa ativa neste grupo.", instance.apiUrl);
