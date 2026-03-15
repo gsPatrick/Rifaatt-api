@@ -54,7 +54,8 @@ class InstanceService {
 
     async #setWebhook(token, apiUrl) {
         const client = this.#getClient(apiUrl);
-        const webhookUrl = `${process.env.APP_URL}/api/webhook`;
+        const baseUrl = (process.env.APP_URL || '').replace(/\/$/, '');
+        const webhookUrl = `${baseUrl}/api/webhook`;
 
         console.log(`[InstanceService] Setting webhook for instance to: ${webhookUrl}`);
 

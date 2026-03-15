@@ -41,8 +41,18 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
     console.log(`Server is running on port ${PORT}`);
+    
+    // Auto-sync webhooks on startup to fix any URL mismatches or double slashes
+    try {
+        const instanceService = require('./src/Features/Instance/instance.service');
+        console.log('[Startup] Syncing webhooks for all instances...');
+        const syncResult = await instanceService.syncWebhooks();
+        console.log(`[Startup] Webhook sync completed: ${syncResult.success} success, ${syncResult.failed} failed.`);
+    } catch (error) {
+        console.error('[Startup] Failed to auto-sync webhooks:', error);
+    }
 });
 
 module.exports = app;
