@@ -151,7 +151,7 @@ class WebhookService {
 
                 if (result.success) {
                     console.log(`[Webhook] Reservation Success: ${result.reserved.join(', ')} for ${sender}`);
-                    const reaction = result.status === 'PARTIAL' ? '❕' : '✅';
+                    const reaction = result.status === 'PARTIAL' ? '❌' : '✅';
                     await InstanceService.reactToMessage(instance.token, chatid, reaction, messageId, instance.apiUrl);
 
                     let replyMsg = `📝 *Reserva para ${msg.senderName || 'Você'}*:\n`;
