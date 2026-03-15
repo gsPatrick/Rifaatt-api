@@ -80,12 +80,10 @@ class InstanceService {
             headers: { token: instance.token }
         });
 
-        console.log('[CONNECT] Uazapi response status:', response.status);
-        console.log('[CONNECT] Uazapi response data keys:', Object.keys(response.data));
-        if (response.data.instance) console.log('[CONNECT] Uazapi instance keys:', Object.keys(response.data.instance));
+        console.log('[CONNECT] Raw Uazapi Response:', JSON.stringify(response.data));
 
         // If Uazapi returns a pairing code, store it
-        const pairCode = response.data.instance?.paircode || response.data.paircode || response.data.pairingCode;
+        const pairCode = response.data.instance?.paircode || response.data.paircode || response.data.pairingCode || response.data.instance?.pairCode;
         console.log('[CONNECT] Extracted pairCode:', pairCode);
 
         if (pairCode) {
