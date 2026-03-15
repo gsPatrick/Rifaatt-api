@@ -307,7 +307,11 @@ class WebhookService {
                         const addNums = args.filter(a => /^\d+$/.test(a));
                         if (!addJid || addNums.length === 0) return this.reply(instance.token, chatid, "❌ Ex: !add 10 25 @user", instance.apiUrl);
 
-                        const addResult = await RaffleService.reserveNumbers(raffle.id, addNums.join(' '), 'Reserva Manual', addJid);
+                        // Try to find the participant name
+                        const targetParticipant = participants.find(p => p.jid === addJid || p.JID === addJid);
+                        const targetName = targetParticipant ? (targetParticipant.name || targetParticipant.notify || targetParticipant.pushname || 'Participante') : 'Participante';
+
+                        const addResult = await RaffleService.reserveNumbers(raffle.id, addNums.join(' '), targetName, addJid);
                         await this.reply(instance.token, chatid, `➕ *Adicionado:* ${addResult.reserved.join(', ')} para @${addJid.split('@')[0]}`, instance.apiUrl);
                         break;
 
