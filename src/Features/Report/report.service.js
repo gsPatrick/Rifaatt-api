@@ -118,7 +118,7 @@ class ReportService {
         });
 
         const activeInstances = await WhatsAppInstance.count({
-            where: { userId, status: 'CONNECTED' }
+            where: { userId, status: 'connected' }
         });
 
         const totalReservations = await Reservation.findAll({
@@ -184,6 +184,71 @@ class ReportService {
             activeInstances,
             totalValue: `R$ ${totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
             activities
+        };
+    }
+
+    async getAllActivities(userId, page = 1, limit = 20) {
+        const offset = (page - 1) * limit;
+
+        const { count, rows } = await Reservation.findAndCountAll({
+            limit,
+            offset,
+            order: [['createdAt', 'DESC']],
+            include: [{
+                model: Raffle,
+                required: true,
+                include: [{
+                    model: WhatsAppInstance,
+                    where: { userId },
+                    required: true
+                }]
+            }]
+        });
+
+        const getEmoji = (num) => {
+            const dict = {
+                '01': '🦢', '02': '🦢', '03': '🦢', '04': '🦢', '05': '🦅', '06': '🦅', '07': '🦅', '08': '🦅',
+                '09': '🐴', '10': '🐴', '11': '🐴', '12': '🐴', '13': '🦋', '14': '🦋', '15': '🦋', '16': '🦋',
+                '17': '🐶', '18': '🐶', '19': '🐶', '20': '🐶', '21': '🐐', '22': '🐐', '23': '🐐', '24': '🐐',
+                '25': '🐏', '26': '🐏', '27': '🐏', '28': '🐏', '29': '🐫', '30': '🐫', '31': '🐫', '32': '🐫',
+                '33': '🐍', '34': '🐍', '35': '🐍', '36': '🐍', '37': '🐇', '38': '🐇', '39': '🐇', '40': '🐇',
+                '41': '🐎', '42': '🐎', '43': '🐎', '44': '🐎', '45': '🐘', '46': '🐘', '47': '🐘', '48': '🐘',
+                '49': '🐔', '50': '🐔', '51': '🐔', '52': '🐔', '53': '🐈', '54': '🐈', '55': '🐈', '56': '🐈',
+                '57': '🐊', '58': '🐊', '59': '🐊', '60': '🐊', '61': '🦁', '62': '🦁', '63': '🦁', '64': '🦁',
+                '65': '🦍', '66': '🦍', '67': '🦍', '68': '🦍', '69': '🐷', '70': '🐷', '71': '🐷', '72': '🐷',
+                '73': '🦚', '74': '🦚', '75': '🦚', '76': '🦚', '77': '🦃', '78': '🦃', '79': '🦃', '80': '🦃',
+                '81': '🐃', '82': '🐃', '83': '🐃', '84': '🐃', '85': '🐅', '86': '🐅', '87': '🐅', '88': '🐅',
+                '89': '🐻', '90': '🐻', '91': '🐻', '92': '🐻', '93': '🦌', '94': '🦌', '95': '🦌', '96': '🦌',
+                '97': '🐄', '98': '🐄', '99': '🐄', '00': '🐄'
+            };
+            return dict[num.padStart(2, '0')] || '🎰';
+        };
+
+        const activities = rows.map(r => {
+            const timeDiff = Date.now() - new Date(r.createdAt).getTime();
+            const minutes = Math.floor(timeDiff / 60000);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+            let timeLabel = 'Agora';
+            if (days > 0) timeLabel = `${days}d atrás`;
+            else if (hours > 0) timeLabel = `${hours}h atrás`;
+            else if (minutes > 0) timeLabel = `${minutes}min atrás`;
+
+            return {
+                id: r.id,
+                type: 'new_reservation',
+                message: `${getEmoji(r.number)} Nova reserva: dezena ${r.number} por ${r.buyerName} no grupo ${r.Raffle?.title || 'Rifa'}.`,
+                time: timeLabel,
+                status: r.status,
+                createdAt: r.createdAt
+            };
+        });
+
+        return {
+            activities,
+            total: count,
+            page,
+            totalPages: Math.ceil(count / limit)
         };
     }
 }

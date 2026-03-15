@@ -30,6 +30,18 @@ class ReportController {
             res.status(500).json({ error: error.message });
         }
     }
+
+    async getAllActivities(req, res) {
+        try {
+            const userId = req.user.id;
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 20;
+            const result = await ReportService.getAllActivities(userId, page, limit);
+            res.json(result);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
 }
 
 module.exports = new ReportController();
