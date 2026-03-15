@@ -390,6 +390,59 @@ class RaffleService {
         };
     }
 
+    async getDetailedLog(raffleId) {
+        const raffle = await Raffle.findByPk(raffleId, {
+            include: [{ model: Reservation }]
+        });
+        if (!raffle) throw new Error('Rifa não encontrada.');
+
+        const reservations = raffle.Reservations || [];
+        if (reservations.length === 0) {
+            return "🏷️ A rifa ainda não possui participantes.";
+        }
+
+        const userGroups = {};
+        for (const res of reservations) {
+            const key = res.buyerPhone || res.buyerName || 'Desconhecido';
+            if (!userGroups[key]) {
+                userGroups[key] = {
+                    name: res.buyerName || 'Desconhecido',
+                    reservations: [],
+                    totalPending: 0
+                };
+            }
+            userGroups[key].reservations.push(res);
+            if (res.status !== 'PAID') {
+                userGroups[key].totalPending += Number(raffle.ticketValue);
+            }
+        }
+
+        let message = `🏷️ Lista de Participantes da Rifa (Dezenas):\n\n`;
+
+        for (const key in userGroups) {
+            const group = userGroups[key];
+            const isFullyPaid = group.totalPending === 0;
+
+            message += `👤 Nome: ${group.name}\n`;
+            message += `🧾 Dezena(s) escolhida(s):\n`;
+
+            group.reservations.sort((a, b) => parseInt(a.number) - parseInt(b.number));
+
+            for (const res of group.reservations) {
+                message += `${res.number} ~> 1x = R$ ${Number(raffle.ticketValue).toFixed(2)}\n`;
+            }
+
+            message += `💰 Valor a Pagar: R$ ${group.totalPending.toFixed(2)}\n`;
+            if (isFullyPaid) {
+                message += `Status de Pagamento: ✅ Pago\n\n`;
+            } else {
+                message += `Status de Pagamento: ⏳ Não Pago\n\n`;
+            }
+        }
+
+        return message.trim();
+    }
+
     async removeReservations(raffleId, numbersStr) {
         const raffle = await Raffle.findByPk(raffleId);
         if (!raffle) throw new Error('Rifa não encontrada.');
@@ -523,13 +576,19 @@ class RaffleService {
 
         if (winner) {
             const congratMsg = `🥳 *PARABÉNS!* 🥳\n\nVocê ganhou a rifa *${raffle.title}* com o número *${winningNumber}*! 🏆\n\nPrêmio: ${raffle.prize}`;
-            await InstanceService.sendMessage(instance.token, winner.buyerPhone, congratMsg);
+            await InstanceService.sendMessage(instance.token, winner.buyerPhone, congratMsg, instance.apiUrl);
 
-            const groupMsg = `📢 *RESULTADO DA RIFA* 📢\n\nO grande vencedor da rifa *${raffle.title}* foi *${winner.buyerName}* com o número *${winningNumber}*! 🏆🥂\n\nParabéns ao ganhador!`;
-            await InstanceService.sendMessage(instance.token, raffle.groupJid, groupMsg);
+            const mentionJid = winner.buyerPhone;
+            const groupMsg = `📢 *RESULTADO DA RIFA* 📢\n\nO grande vencedor da rifa *${raffle.title}* foi @${mentionJid.split('@')[0]} (*${winner.buyerName}*) com o número *${winningNumber}*! 🏆🥂\n\nParabéns ao ganhador!`;
+            await InstanceService.sendMessage(instance.token, raffle.groupJid, groupMsg, instance.apiUrl, [mentionJid]);
         } else {
-            const groupMsg = `🏁 *RIFA FINALIZADA* 🏁\n\nA rifa *${raffle.title}* foi encerrada. O número sorteado foi *${winningNumber}*.\n\nInfelizmente este número não foi vendido ou não estava pago.`;
-            await InstanceService.sendMessage(instance.token, raffle.groupJid, groupMsg);
+            // Find the organizer
+            const { User } = require('../../Models');
+            const owner = await User.findByPk(instance.userId);
+            const ownerName = owner ? owner.name : 'o Organizador';
+
+            const groupMsg = `📢 *RESULTADO DA RIFA* 📢\n\nA rifa *${raffle.title}* foi encerrada e o número sorteado foi *${winningNumber}*!\n\n⚠️ Como este número estava livre (não foi vendido) ou não teve o pagamento confirmado, o vencedor oficial é *${ownerName}* (Organizador da Rifa). 🏆🥂\n\nParabéns!`;
+            await InstanceService.sendMessage(instance.token, raffle.groupJid, groupMsg, instance.apiUrl);
         }
 
         return raffle;

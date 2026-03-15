@@ -205,7 +205,7 @@ class WebhookService {
                     return;
                 }
 
-                if (command === '!disponivel') {
+                if (command === '!disponivel' || command === '!livre') {
                     if (!raffle || raffle.status !== 'ACTIVE') return;
                     const list = await RaffleService.generateAvailableList(raffle.id);
                     await this.reply(instance.token, chatid, list, instance.apiUrl);
@@ -213,9 +213,39 @@ class WebhookService {
                 }
 
                 if (command === '!lista') {
+                    if (!isAdmin) return;
                     if (!raffle || raffle.status !== 'ACTIVE') return;
                     const list = await RaffleService.generateVisualList(raffle.id);
                     await this.reply(instance.token, chatid, list, instance.apiUrl);
+                    return;
+                }
+
+                if (command === '!ajuda' || command === '!help') {
+                    let helpMsg = `📖 *GUIA DE COMANDOS DA RIFA*\n\n`;
+                    helpMsg += `👤 *PARA TODOS OS PARTICIPANTES*\n`;
+                    helpMsg += `🔹 *!valor* - Mostra as suas compras e o valor de cada número\n`;
+                    helpMsg += `🔹 *!disponivel* ou *!livre* - Lista os números que ainda estão soltos para compra\n\n`;
+                    helpMsg += `👑 *SÓ PARA OS ADMINISTRADORES*\n`;
+                    helpMsg += `🔸 *!lista* - Mostra a relação de todos os números e quem comprou\n`;
+                    helpMsg += `🔸 *!titulo Meu Novo Nome* - Muda o nome da rifa atual\n`;
+                    helpMsg += `🔸 *!premio 1 iPhone* - Define qual será o prêmio\n`;
+                    helpMsg += `🔸 *!pix 12345678900* - Cadastra a sua chave PIX\n`;
+                    helpMsg += `🔸 *!valor_dezena 10* - Define que cada número custará 10 reais\n`;
+                    helpMsg += `🔸 *!iniciar* - Começa a vender a rifa no grupo!\n`;
+                    helpMsg += `🔸 *!pago @nome* - Confirma que essa pessoa pagou os números dela\n`;
+                    helpMsg += `🔸 *!add 10 15 @nome* - Adiciona os números 10 e 15 para essa pessoa manualmente\n`;
+                    helpMsg += `🔸 *!remover 10 15* - Tira a reserva desses números, deixando eles livres\n`;
+                    helpMsg += `🔸 *!log* - Mostra o dinheiro e o que falta pagar\n\n`;
+                    helpMsg += `🎯 *COMO FINALIZAR E SORTEAR (Admins)*\n`;
+                    helpMsg += `Para encerrar a rifa e anunciar quem ganhou, use de duas formas:\n\n`;
+                    helpMsg += `1️⃣ Você mesmo escolhe o número vencedor:\n`;
+                    helpMsg += `Digite: *!finalizar 34*\n`;
+                    helpMsg += `(Isso termina a rifa dando o prêmio direto para quem pagou o número 34)\n\n`;
+                    helpMsg += `2️⃣ O robô sorteia sozinho pela sorte:\n`;
+                    helpMsg += `Digite: *!finalizar sorteio*\n`;
+                    helpMsg += `(O sistema sorteia um número pago ao acaso e já avisa quem ganhou na hora!)`;
+
+                    await this.reply(instance.token, chatid, helpMsg, instance.apiUrl);
                     return;
                 }
                 // These commands are now moved to Admin Commands or removed.
@@ -304,6 +334,27 @@ class WebhookService {
 
                     case '!finalizar':
                         if (!raffle || raffle.status !== 'ACTIVE') return;
+
+                        if (args.length > 0) {
+                            const option = args[0].toLowerCase();
+                            let winningNumber = null;
+
+                            if (option === 'sorteio') {
+                                const totalNumbers = raffle.numbersCount || 100;
+                                const randomNum = Math.floor(Math.random() * totalNumbers) + 1;
+                                winningNumber = randomNum.toString();
+                            } else if (/^\d+$/.test(option)) {
+                                winningNumber = option;
+                            } else {
+                                return this.reply(instance.token, chatid, "❌ Uso: !finalizar [sorteio | numero]", instance.apiUrl);
+                            }
+
+                            await RaffleService.finalizeWithWinner(raffle.id, winningNumber);
+                            await InstanceService.updateGroupAnnounce(instance.token, chatid, true, instance.apiUrl);
+                            return;
+                        }
+
+                        // If no arguments, fallback to old generic close (without winner)
                         await InstanceService.updateGroupAnnounce(instance.token, chatid, true, instance.apiUrl);
                         raffle.status = 'FINALIZED';
                         await raffle.save();
@@ -343,12 +394,7 @@ class WebhookService {
 
                     case '!log':
                         if (!raffle) return;
-                        const stats = await RaffleService.getFinanceSummary(raffle.id);
-                        let logMsg = `📊 *BALANÇO DA RIFA*\n\n`;
-                        logMsg += `📝 *Reservas:* ${stats.total}\n`;
-                        logMsg += `✅ *Pagos:* ${stats.paid} (R$ ${stats.paidValue.toFixed(2)})\n`;
-                        logMsg += `⏳ *Pendentes:* ${stats.pending} (R$ ${stats.pendingValue.toFixed(2)})\n`;
-                        logMsg += `💰 *Total Previsto:* R$ ${stats.totalValue.toFixed(2)}`;
+                        const logMsg = await RaffleService.getDetailedLog(raffle.id);
                         await this.reply(instance.token, chatid, logMsg, instance.apiUrl);
                         break;
                 }

@@ -132,8 +132,8 @@ class ReportService {
                 }]
             }]
         });
-
         const totalValue = totalReservations.reduce((acc, curr) => {
+            if (curr.status !== 'PAID') return acc;
             const val = parseFloat(curr.Raffle?.ticketValue);
             return acc + (isNaN(val) ? 0 : val);
         }, 0);

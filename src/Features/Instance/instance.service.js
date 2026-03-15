@@ -113,14 +113,14 @@ class InstanceService {
         return await WhatsAppInstance.findAll({ where: { userId: userId } });
     }
 
-    async sendMessage(token, number, text, apiUrl) {
+    async sendMessage(token, number, text, apiUrl, mentions = []) {
         const client = this.#getClient(apiUrl);
         console.log(`[InstanceService] Sending message to ${number} | Token: ${token.substring(0, 5)}...`);
         try {
-            const response = await client.post('/send/text', {
-                number,
-                text
-            }, {
+            const body = { number, text };
+            if (mentions && mentions.length > 0) body.mentions = mentions;
+            
+            const response = await client.post('/send/text', body, {
                 headers: { token }
             });
             console.log(`[InstanceService] Send Message Response SUCCESS`);
