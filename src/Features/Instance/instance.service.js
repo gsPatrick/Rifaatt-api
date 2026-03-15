@@ -74,9 +74,22 @@ class InstanceService {
         if (!instance) throw new Error('Instance not found');
 
         const client = this.#getClient(instance.apiUrl);
+
+        // If we have a phone, let's try to disconnect first to clear any QR code state
+        if (phone) {
+            console.log(`[CONNECT] Phone provided. Attempting disconnect first for ${instanceId}`);
+            try {
+                await client.post('/instance/disconnect', {}, { headers: { token: instance.token } });
+            } catch (e) {
+                console.log('[CONNECT] Disconnect before pairing failed (expected if already disconnected)');
+            }
+        }
+
         console.log(`[CONNECT] Connecting instance ${instanceId} with phone: ${phone}`);
         
+        // Try both body and query params to be safe
         const response = await client.post('/instance/connect', { phone }, {
+            params: { phone },
             headers: { token: instance.token }
         });
 
@@ -90,6 +103,22 @@ class InstanceService {
             instance.pairingCode = pairCode;
             await instance.save();
         }
+
+        return response.data;
+    }
+
+    async disconnectInstance(instanceId) {
+        const instance = await WhatsAppInstance.findByPk(instanceId);
+        if (!instance) throw new Error('Instance not found');
+
+        const client = this.#getClient(instance.apiUrl);
+        const response = await client.post('/instance/disconnect', {}, {
+            headers: { token: instance.token }
+        });
+
+        instance.status = 'disconnected';
+        instance.pairingCode = null;
+        await instance.save();
 
         return response.data;
     }

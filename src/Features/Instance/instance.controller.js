@@ -27,6 +27,16 @@ class InstanceController {
         }
     }
 
+    async disconnect(req, res) {
+        try {
+            const { id } = req.params;
+            const data = await instanceService.disconnectInstance(id);
+            res.json(data);
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
     async status(req, res) {
         try {
             const { id } = req.params;
