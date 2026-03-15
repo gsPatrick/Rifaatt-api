@@ -80,16 +80,22 @@ class InstanceService {
             console.log(`[CONNECT] Phone provided. Attempting disconnect first for ${instanceId}`);
             try {
                 await client.post('/instance/disconnect', {}, { headers: { token: instance.token } });
+                // Give the API's internal state a moment to settle
+                await new Promise(resolve => setTimeout(resolve, 2000));
             } catch (e) {
                 console.log('[CONNECT] Disconnect before pairing failed (expected if already disconnected)');
+                // Even if it failed, wait a bit
+                await new Promise(resolve => setTimeout(resolve, 1000));
             }
         }
 
         console.log(`[CONNECT] Connecting instance ${instanceId} with phone: ${phone}`);
         
-        // Try both body and query params to be safe
-        const response = await client.post('/instance/connect', { phone }, {
-            params: { phone },
+        // Use ONLY body data as some Go servers get confused by duplicate params in query
+        const response = await client.post('/instance/connect', { 
+            phone,
+            phoneNumber: phone // Adding phoneNumber as fallback
+        }, {
             headers: { token: instance.token }
         });
 
