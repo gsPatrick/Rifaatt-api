@@ -15,7 +15,18 @@ class RaffleController {
         try {
             const { groupJid } = req.params;
             const raffle = await RaffleService.getActiveRaffleByGroup(groupJid);
-            return res.json(raffle);
+            
+            // Also fetch the group activation to ensure we have the group name even if raffle is null
+            const { GroupActivation, WhatsAppInstance } = require('../../Models');
+            const group = await GroupActivation.findOne({
+                where: { groupJid },
+                include: [{ model: WhatsAppInstance, required: false }]
+            });
+
+            return res.json({
+                group,
+                raffle
+            });
         } catch (error) {
             return res.status(400).json({ error: error.message });
         }

@@ -53,7 +53,9 @@ class MasterController {
             });
 
             const totalActiveInstances = await WhatsAppInstance.count({
-                where: { status: 'CONNECTED' }
+                where: { 
+                    status: { [Op.in]: ['CONNECTED', 'open'] }
+                }
             });
 
             // Instances that are NOT connected but belong to users who have a plan assigned
