@@ -7,11 +7,20 @@ const { Op } = require('sequelize');
 
 class WebhookService {
     async handleEvent(payload) {
-        const { event, instance: instanceKey, data } = payload;
+        // Support both Uazapi v1 (event, instance) and v2 (EventType, token)
+        const event = payload.EventType || payload.event;
+        const instanceKey = payload.token || payload.instance;
+        const data = payload.message || payload.data;
+
         console.log(`[Webhook] Event Received: ${event} | Instance: ${instanceKey}`);
 
         if (event !== 'message' && event !== 'messages') {
             console.log(`[Webhook] Skipping event type: ${event}`);
+            return;
+        }
+
+        if (!data) {
+            console.log(`[Webhook] No data/message found in payload`);
             return;
         }
 
