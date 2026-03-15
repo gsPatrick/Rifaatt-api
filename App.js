@@ -62,6 +62,40 @@ app.listen(PORT, async () => {
         if (fixedCount > 0) {
             console.log(`[Startup] Fixed ${fixedCount} raffles with 0 or NULL numbersCount.`);
         }
+
+        // 3. Normalize JIDs in Reservations and WhatsAppInstances
+        const Reservation = require('./src/Models/Reservation');
+        const WhatsAppInstance = require('./src/Models/WhatsAppInstance');
+        
+        const normalize = (jid) => {
+            if (!jid) return null;
+            let clean = jid.toString().trim();
+            const number = clean.split('@')[0].replace(/[^0-9]/g, '');
+            if (!number) return jid;
+            return `${number}@s.whatsapp.net`;
+        };
+
+        console.log('[Startup] Normalizing JIDs in database...');
+        const allRes = await Reservation.findAll();
+        let resFixed = 0;
+        for (const res of allRes) {
+            const normalized = normalize(res.buyerPhone);
+            if (res.buyerPhone !== normalized) {
+                await res.update({ buyerPhone: normalized });
+                resFixed++;
+            }
+        }
+
+        const allInst = await WhatsAppInstance.findAll();
+        let instFixed = 0;
+        for (const inst of allInst) {
+            const normalized = normalize(inst.owner);
+            if (inst.owner !== normalized) {
+                await inst.update({ owner: normalized });
+                instFixed++;
+            }
+        }
+        console.log(`[Startup] JID Normalization completed: ${resFixed} reservations and ${instFixed} instances fixed.`);
     } catch (error) {
         console.error('[Startup] Failed to run initialization scripts:', error);
     }

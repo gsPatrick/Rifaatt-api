@@ -34,7 +34,8 @@ class WebhookService {
 
     async processMessage(instanceKey, msg) {
         const { chatid, text, fromMe, isGroup, id: messageId } = msg;
-        const sender = msg.sender_pn || msg.sender;
+        const senderRaw = msg.sender_pn || msg.sender;
+        const sender = this.normalizeJid(senderRaw);
 
         // Log everything for debugging
         console.log(`[Webhook] Incoming: "${text}" | fromMe: ${fromMe} | isGroup: ${isGroup} | Sender: ${sender}`);
@@ -363,15 +364,22 @@ class WebhookService {
         return await InstanceService.sendMessage(token, chatid, text, apiUrl);
     }
 
+    normalizeJid(jid) {
+        if (!jid) return null;
+        let clean = jid.toString().trim();
+        // Remove suffixes and prefixes to get the raw number
+        const number = clean.split('@')[0].replace(/[^0-9]/g, '');
+        // Standardize to @s.whatsapp.net (canonical user JID format)
+        return `${number}@s.whatsapp.net`;
+    }
+
     getMentionedJid(msg, args) {
         if (msg.mentions && msg.mentions.length > 0) {
-            return msg.mentions[0];
+            return this.normalizeJid(msg.mentions[0]);
         }
         const mention = args.find(a => a.includes('@'));
         if (mention) {
-            let pureJid = mention.replace('@', '');
-            if (!pureJid.includes('@')) pureJid += '@s.whatsapp.net';
-            return pureJid;
+            return this.normalizeJid(mention);
         }
         return null;
     }
