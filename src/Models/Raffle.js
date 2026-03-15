@@ -38,7 +38,7 @@ Raffle.init({
         defaultValue: 100,
     },
     status: {
-        type: DataTypes.ENUM('CREATED', 'ACTIVE', 'FINALIZED', 'FINISHED'),
+        type: DataTypes.ENUM('CREATED', 'PENDING', 'ACTIVE', 'FINALIZED', 'FINISHED'),
         defaultValue: 'CREATED',
     },
     groupJid: {

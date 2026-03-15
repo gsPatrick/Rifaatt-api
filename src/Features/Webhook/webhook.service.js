@@ -118,8 +118,20 @@ class WebhookService {
             }
 
             console.log(`[Webhook] Sender: ${sender} | fromMe: ${fromMe} | IsAdmin: ${isAdmin} | Total Participants: ${participants.length}`);
-            if (!senderParticipant && !fromMe) {
-                console.log(`[Webhook] Sender NOT FOUND in participants list. Mapping might be off.`);
+            // 0. Handle Confirmation Responses (1 or 2 when PENDING)
+            if (raffle && raffle.status === 'PENDING' && isAdmin) {
+                if (cleanText === '1') {
+                    raffle.status = 'ACTIVE';
+                    await raffle.save();
+                    const visualList = await RaffleService.generateVisualList(raffle.id);
+                    await this.reply(instance.token, chatid, `🚀 *RIFA INICIADA!*\n\nA partir de agora as dezenas podem ser reservadas.\n\n${visualList}`, instance.apiUrl);
+                    return;
+                } else if (cleanText === '2') {
+                    raffle.status = 'CREATED';
+                    await raffle.save();
+                    await this.reply(instance.token, chatid, `✏️ *Operação cancelada.*\n\nVocê pode continuar configurando a rifa usando os comandos (!titulo, !premio, etc) e digitar !iniciar quando estiver pronto.`, instance.apiUrl);
+                    return;
+                }
             }
 
             // 1. Handle Reservations (Number only message)
@@ -227,6 +239,7 @@ class WebhookService {
                     case '!iniciar':
                         if (raffle) {
                             if (raffle.status === 'ACTIVE') return this.reply(instance.token, chatid, "⚠️ Já existe uma rifa ativa neste grupo.", instance.apiUrl);
+                            if (raffle.status === 'PENDING') return this.reply(instance.token, chatid, "⚠️ Esta rifa já está aguardando confirmação. Digite *1* para confirmar ou *2* para refazer.", instance.apiUrl);
 
                             const missing = [];
                             if (!raffle.title || raffle.title === 'Nova Rifa') missing.push('Título');
@@ -238,10 +251,21 @@ class WebhookService {
                                 return this.reply(instance.token, chatid, `⚠️ *Erro*: Faltam campos para iniciar: ${missing.join(', ')}.\nUse !titulo, !premio, !pix ou !valor_dezena.`, instance.apiUrl);
                             }
 
-                            raffle.status = 'ACTIVE';
+                            // Instead of ACTIVE, set to PENDING and ask for confirmation
+                            raffle.status = 'PENDING';
                             await raffle.save();
-                            const visualList = await RaffleService.generateVisualList(raffle.id);
-                            await this.reply(instance.token, chatid, `🚀 *RIFA INICIADA!*\n\n${visualList}`, instance.apiUrl);
+
+                            let summary = `📝 *CONFIRMAÇÃO DA RIFA*\n\n`;
+                            summary += `📌 *Título:* ${raffle.title}\n`;
+                            summary += `🎁 *Prêmio:* ${raffle.prize}\n`;
+                            summary += `💰 *Valor da Dezena:* R$ ${raffle.ticketValue.toFixed(2)}\n`;
+                            summary += `🔑 *PIX:* ${raffle.pixKey}\n`;
+                            summary += `🔢 *Quantidade de Números:* ${raffle.numbersCount}\n\n`;
+                            summary += `Os dados acima estão corretos?\n\n`;
+                            summary += `*1* - Sim, iniciar agora 🚀\n`;
+                            summary += `*2* - Não, quero corrigir ✏️`;
+
+                            await this.reply(instance.token, chatid, summary, instance.apiUrl);
                         } else {
                             await this.reply(instance.token, chatid, "📝 Use !titulo, !premio, !pix e !valor_dezena para configurar a primeira rifa.", instance.apiUrl);
                         }
