@@ -129,7 +129,8 @@ class RaffleService {
         // Parse numbers: handles 3 5 6 or 45/34/12 or 01,02 or 01-02 or 01.02 or 01:02 or multiline
         const numbers = numbersStr.split(/[\s,.\-/:\n]+/)
             .filter(n => n.length > 0)
-            .map(n => n.padStart(2, '0'));
+            .map(n => n.padStart(2, '0'))
+            .filter((v, i, a) => a.indexOf(v) === i);
 
         if (numbers.length === 0) {
             return { success: false, error: 'Nenhum número válido fornecido.' };
@@ -155,15 +156,15 @@ class RaffleService {
         const alreadyTaken = existing.map(r => r.number);
         const available = numbers.filter(n => !alreadyTaken.includes(n));
 
-        if (alreadyTaken.length > 0) {
+        if (available.length === 0) {
             return {
                 success: false,
-                status: 'TAKEN',
+                status: 'ALL_TAKEN',
                 alreadyTaken
             };
         }
 
-        const reserved = await Promise.all(numbers.map(number =>
+        const reserved = await Promise.all(available.map(number =>
             Reservation.create({
                 raffleId,
                 buyerName,
@@ -175,8 +176,9 @@ class RaffleService {
 
         return {
             success: true,
-            status: 'FULL',
+            status: alreadyTaken.length > 0 ? 'PARTIAL' : 'FULL',
             reserved: reserved.map(r => r.number),
+            alreadyTaken,
             totalReserved: reserved.length
         };
     }

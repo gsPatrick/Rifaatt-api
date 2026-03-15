@@ -154,12 +154,23 @@ class WebhookService {
                     const reaction = result.status === 'PARTIAL' ? '❌' : '✅';
                     await InstanceService.reactToMessage(instance.token, chatid, reaction, messageId, instance.apiUrl);
 
-                    let replyMsg = `📝 *Reserva para ${msg.senderName || 'Você'}*:\n`;
-                    replyMsg += `✅ Confirmados: ${result.reserved.join(', ')}\n`;
-                    if (result.alreadyTaken.length > 0) {
-                        replyMsg += `❌ Ocupados: ${result.alreadyTaken.join(', ')}\n`;
+                    let replyMsg = `📝 *Reserva para ${msg.senderName || 'Você'}*:\n\n`;
+                    
+                    // Parse original numbers to maintain original order for feedback
+                    const originalNumbers = cleanText.split(/[\s,.\-/:\n]+/)
+                        .filter(n => n.length > 0)
+                        .map(n => n.padStart(2, '0'));
+
+                    originalNumbers.forEach(num => {
+                        const isReserved = result.reserved.includes(num);
+                        replyMsg += `${isReserved ? '✅' : '❌'} ${num}${isReserved ? '' : ' (Ocupado)'}\n`;
+                    });
+
+                    if (result.reserved.length > 0) {
+                        replyMsg += `\n💰 Total: R$ ${(result.totalReserved * raffle.ticketValue).toFixed(2)}\n🔑 PIX: ${raffle.pixKey}\n📌 Após pagar, envie o comprovante.`;
+                    } else {
+                        replyMsg += `\n❌ Nenhum número disponível.`;
                     }
-                    replyMsg += `\n💰 Total: R$ ${(result.totalReserved * raffle.ticketValue).toFixed(2)}\n🔑 PIX: ${raffle.pixKey}\n📌 Após pagar, envie o comprovante.`;
 
                     await this.reply(instance.token, chatid, replyMsg, instance.apiUrl);
                 } else if (result.status === 'ALL_TAKEN') {
