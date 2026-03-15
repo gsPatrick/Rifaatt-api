@@ -33,6 +33,13 @@ class RaffleService {
             console.log(`[RaffleService] Active raffle FOUND: ${raffle.title} (ID: ${raffle.id})`);
         } else {
             console.log(`[RaffleService] No active raffle found in DB for group: ${groupJid}`);
+            // Diagnostic: Check if any raffle exists for this group at all
+            const anyRaffle = await Raffle.findOne({ where: { groupJid } });
+            if (anyRaffle) {
+                console.log(`[RaffleService] DIAGNOSTIC: Found a raffle for this group but status is: ${anyRaffle.status}`);
+            } else {
+                console.log(`[RaffleService] DIAGNOSTIC: No raffle record exists for this group JID.`);
+            }
         }
         return raffle;
     }

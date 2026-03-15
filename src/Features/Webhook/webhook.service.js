@@ -80,6 +80,11 @@ class WebhookService {
             const senderParticipant = participants.find(p => p.jid === sender || p.JID === sender);
             const isAdmin = senderParticipant ? (senderParticipant.isAdmin || senderParticipant.IsAdmin) : false;
 
+            console.log(`[Webhook] Sender: ${sender} | IsAdmin: ${isAdmin} | Total Participants: ${participants.length}`);
+            if (!senderParticipant) {
+                console.log(`[Webhook] Sender NOT FOUND in participants list. Mapping might be off.`);
+            }
+
             // 1. Handle Reservations (Number only message)
             // Accepts: 10 20 | 10,20 | 10/20 | 10-20 | 10.20 | 10:20 | Multiline
             const isReservation = /^[\d\s,.\-/:\n]+$/.test(cleanText) && /\d{1,3}/.test(cleanText);
@@ -118,10 +123,7 @@ class WebhookService {
             // 2. Commands Handler (Starting with !)
             if (command.startsWith('!')) {
                 // Admin Validation Check
-                const groupInfo = await InstanceService.getGroupInfo(instance.token, chatid, instance.apiUrl);
-                const participants = groupInfo.Participants || [];
-                const senderParticipant = participants.find(p => p.JID === sender);
-                const isAdmin = senderParticipant ? senderParticipant.IsAdmin : false;
+                // (Already calculated above)
 
                 // User Commands (No Admin Required)
                 if (command === '!valor') {
