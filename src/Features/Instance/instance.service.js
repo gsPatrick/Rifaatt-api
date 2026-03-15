@@ -54,7 +54,9 @@ class InstanceService {
 
     async #setWebhook(token, apiUrl) {
         const client = this.#getClient(apiUrl);
-        const webhookUrl = `${process.env.APP_URL}/api/webhooks`;
+        const webhookUrl = `${process.env.APP_URL}/api/webhook`;
+
+        console.log(`[InstanceService] Setting webhook for instance to: ${webhookUrl}`);
 
         await client.post('/webhook', {
             url: webhookUrl,
@@ -217,6 +219,31 @@ class InstanceService {
             headers: { token }
         });
         return response.data;
+    }
+    async syncWebhooks() {
+        const instances = await WhatsAppInstance.findAll();
+        const results = {
+            total: instances.length,
+            success: 0,
+            failed: 0,
+            errors: []
+        };
+
+        for (const instance of instances) {
+            try {
+                await this.#setWebhook(instance.token, instance.apiUrl);
+                results.success++;
+            } catch (error) {
+                results.failed++;
+                results.errors.push({
+                    name: instance.name,
+                    error: error.message
+                });
+                console.error(`[InstanceService] Failed to sync webhook for ${instance.name}:`, error.message);
+            }
+        }
+
+        return results;
     }
 }
 

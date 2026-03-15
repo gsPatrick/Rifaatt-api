@@ -65,6 +65,15 @@ class InstanceController {
             res.status(400).json({ error: error.message });
         }
     }
+
+    async syncWebhooks(req, res) {
+        try {
+            const result = await instanceService.syncWebhooks();
+            res.json(result);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
 }
 
 module.exports = new InstanceController();
