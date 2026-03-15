@@ -164,6 +164,18 @@ class InstanceService {
         return response.data;
     }
 
+    async getGroupInviteLink(token, groupjid, apiUrl) {
+        const client = this.#getClient(apiUrl);
+        const response = await client.post('/group/info', {
+            groupjid,
+            getInviteLink: true
+        }, {
+            headers: { token }
+        });
+        // Uazapi returns invite_link inside the group/info response
+        return response.data.invite_link || response.data.InviteLink;
+    }
+
     async updateGroupParticipants(token, groupjid, action, participants, apiUrl) {
         const client = this.#getClient(apiUrl);
         const response = await client.post('/group/updateParticipants', {

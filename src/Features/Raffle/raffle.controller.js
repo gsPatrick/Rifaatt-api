@@ -23,6 +23,14 @@ class RaffleController {
             });
 
             if (!group) {
+                // Try finding by groupJid directly if groupId is actually a JID
+                group = await GroupActivation.findOne({
+                    where: { groupJid: groupId },
+                    include: [{ model: WhatsAppInstance, required: false }]
+                });
+            }
+
+            if (!group) {
                 return res.status(404).json({ error: 'Grupo não encontrado' });
             }
 
@@ -115,6 +123,39 @@ class RaffleController {
             const { id } = req.params;
             const result = await RaffleService.deleteGroupActivation(id);
             return res.json(result);
+        } catch (error) {
+            return res.status(400).json({ error: error.message });
+        }
+    }
+
+    async getGroupInviteLink(req, res) {
+        try {
+            const { groupJid } = req.params;
+            const { GroupActivation, WhatsAppInstance } = require('../../Models');
+            
+            // groupId could be UUID or JID
+            const { Op } = require('sequelize');
+            const group = await GroupActivation.findOne({
+                where: { 
+                    [Op.or]: [
+                        { id: groupJid },
+                        { groupJid: groupJid }
+                    ]
+                },
+                include: [{ model: WhatsAppInstance }]
+            });
+
+            if (!group || !group.WhatsAppInstance) {
+                return res.status(404).json({ error: 'Grupo ou instância não encontrados' });
+            }
+
+            const inviteLink = await InstanceService.getGroupInviteLink(
+                group.WhatsAppInstance.token,
+                group.groupJid,
+                group.WhatsAppInstance.apiUrl
+            );
+
+            return res.json({ inviteLink });
         } catch (error) {
             return res.status(400).json({ error: error.message });
         }
