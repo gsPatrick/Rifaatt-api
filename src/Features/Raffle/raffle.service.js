@@ -33,28 +33,28 @@ class RaffleService {
     async getAnimalForNumber(numStr) {
         const num = parseInt(numStr);
         const dict = {
-            '01': { e: '🦢', n: 'Cisne' }, '02': { e: '🦢', n: 'Cisne' }, '03': { e: '🦢', n: 'Cisne' }, '04': { e: '🦢', n: 'Cisne' },
+            '01': { e: '🦩', n: 'Avestruz' }, '02': { e: '🦩', n: 'Avestruz' }, '03': { e: '🦩', n: 'Avestruz' }, '04': { e: '🦩', n: 'Avestruz' },
             '05': { e: '🦅', n: 'Águia' }, '06': { e: '🦅', n: 'Águia' }, '07': { e: '🦅', n: 'Águia' }, '08': { e: '🦅', n: 'Águia' },
-            '09': { e: '🐴', n: 'Cavalo' }, '10': { e: '🐴', n: 'Cavalo' }, '11': { e: '🐴', n: 'Cavalo' }, '12': { e: '🐴', n: 'Cavalo' },
+            '09': { e: '🫏', n: 'Burro' }, '10': { e: '🫏', n: 'Burro' }, '11': { e: '🫏', n: 'Burro' }, '12': { e: '🫏', n: 'Burro' },
             '13': { e: '🦋', n: 'Borboleta' }, '14': { e: '🦋', n: 'Borboleta' }, '15': { e: '🦋', n: 'Borboleta' }, '16': { e: '🦋', n: 'Borboleta' },
             '17': { e: '🐶', n: 'Cachorro' }, '18': { e: '🐶', n: 'Cachorro' }, '19': { e: '🐶', n: 'Cachorro' }, '20': { e: '🐶', n: 'Cachorro' },
             '21': { e: '🐐', n: 'Cabra' }, '22': { e: '🐐', n: 'Cabra' }, '23': { e: '🐐', n: 'Cabra' }, '24': { e: '🐐', n: 'Cabra' },
-            '25': { e: '🐏', n: 'Carneiro' }, '26': { e: '🐏', n: 'Carneiro' }, '27': { e: '🐏', n: 'Carneiro' }, '28': { e: '🐏', n: 'Carneiro' },
+            '25': { e: '🐑', n: 'Carneiro' }, '26': { e: '🐑', n: 'Carneiro' }, '27': { e: '🐑', n: 'Carneiro' }, '28': { e: '🐑', n: 'Carneiro' },
             '29': { e: '🐫', n: 'Camelo' }, '30': { e: '🐫', n: 'Camelo' }, '31': { e: '🐫', n: 'Camelo' }, '32': { e: '🐫', n: 'Camelo' },
             '33': { e: '🐍', n: 'Cobra' }, '34': { e: '🐍', n: 'Cobra' }, '35': { e: '🐍', n: 'Cobra' }, '36': { e: '🐍', n: 'Cobra' },
             '37': { e: '🐇', n: 'Coelho' }, '38': { e: '🐇', n: 'Coelho' }, '39': { e: '🐇', n: 'Coelho' }, '40': { e: '🐇', n: 'Coelho' },
             '41': { e: '🐎', n: 'Cavalo' }, '42': { e: '🐎', n: 'Cavalo' }, '43': { e: '🐎', n: 'Cavalo' }, '44': { e: '🐎', n: 'Cavalo' },
             '45': { e: '🐘', n: 'Elefante' }, '46': { e: '🐘', n: 'Elefante' }, '47': { e: '🐘', n: 'Elefante' }, '48': { e: '🐘', n: 'Elefante' },
-            '49': { e: '🐔', n: 'Galo' }, '50': { e: '🐔', n: 'Galo' }, '51': { e: '🐔', n: 'Galo' }, '52': { e: '🐔', n: 'Galo' },
+            '49': { e: '🐓', n: 'Galo' }, '50': { e: '🐓', n: 'Galo' }, '51': { e: '🐓', n: 'Galo' }, '52': { e: '🐓', n: 'Galo' },
             '53': { e: '🐈', n: 'Gato' }, '54': { e: '🐈', n: 'Gato' }, '55': { e: '🐈', n: 'Gato' }, '56': { e: '🐈', n: 'Gato' },
             '57': { e: '🐊', n: 'Jacaré' }, '58': { e: '🐊', n: 'Jacaré' }, '59': { e: '🐊', n: 'Jacaré' }, '60': { e: '🐊', n: 'Jacaré' },
             '61': { e: '🦁', n: 'Leão' }, '62': { e: '🦁', n: 'Leão' }, '63': { e: '🦁', n: 'Leão' }, '64': { e: '🦁', n: 'Leão' },
-            '65': { e: '🦍', n: 'Macaco' }, '66': { e: '🦍', n: 'Macaco' }, '67': { e: '🦍', n: 'Macaco' }, '68': { e: '🦍', n: 'Macaco' },
-            '69': { e: '🐷', n: 'Porco' }, '70': { e: '🐷', n: 'Porco' }, '71': { e: '🐷', n: 'Porco' }, '72': { e: '🐷', n: 'Porco' },
+            '65': { e: '🐒', n: 'Macaco' }, '66': { e: '🐒', n: 'Macaco' }, '67': { e: '🐒', n: 'Macaco' }, '68': { e: '🐒', n: 'Macaco' },
+            '69': { e: '🐖', n: 'Porco' }, '70': { e: '🐖', n: 'Porco' }, '71': { e: '🐖', n: 'Porco' }, '72': { e: '🐖', n: 'Porco' },
             '73': { e: '🦚', n: 'Pavão' }, '74': { e: '🦚', n: 'Pavão' }, '75': { e: '🦚', n: 'Pavão' }, '76': { e: '🦚', n: 'Pavão' },
             '77': { e: '🦃', n: 'Peru' }, '78': { e: '🦃', n: 'Peru' }, '79': { e: '🦃', n: 'Peru' }, '80': { e: '🦃', n: 'Peru' },
             '81': { e: '🐃', n: 'Touro' }, '82': { e: '🐃', n: 'Touro' }, '83': { e: '🐃', n: 'Touro' }, '84': { e: '🐃', n: 'Touro' },
-            '85': { e: '🐅', n: 'Tigre' }, '86': { e: '🐅', n: 'Tigre' }, '87': { e: '🐅', n: 'Tigre' }, '88': { e: '🐅', n: 'Tigre' },
+            '85': { e: '🐯', n: 'Tigre' }, '86': { e: '🐯', n: 'Tigre' }, '87': { e: '🐯', n: 'Tigre' }, '88': { e: '🐯', n: 'Tigre' },
             '89': { e: '🐻', n: 'Urso' }, '90': { e: '🐻', n: 'Urso' }, '91': { e: '🐻', n: 'Urso' }, '92': { e: '🐻', n: 'Urso' },
             '93': { e: '🦌', n: 'Veado' }, '94': { e: '🦌', n: 'Veado' }, '95': { e: '🦌', n: 'Veado' }, '96': { e: '🦌', n: 'Veado' },
             '97': { e: '🐄', n: 'Vaca' }, '98': { e: '🐄', n: 'Vaca' }, '99': { e: '🐄', n: 'Vaca' }, '00': { e: '🐄', n: 'Vaca' }
@@ -102,8 +102,8 @@ class RaffleService {
     }
 
     async reserveNumbers(raffleId, numbersStr, buyerName, buyerPhone) {
-        // Parse numbers: handles 3 5 6 or 45/34/12 or 01,02
-        const numbers = numbersStr.split(/[\s,/]+/)
+        // Parse numbers: handles 3 5 6 or 45/34/12 or 01,02 or 01-02 or 01.02 or 01:02 or multiline
+        const numbers = numbersStr.split(/[\s,.\-/:\n]+/)
             .filter(n => n.length > 0)
             .map(n => n.padStart(2, '0'));
 
@@ -171,6 +171,54 @@ class RaffleService {
                 model: WhatsAppInstance,
                 where: { userId }
             }]
+        });
+    }
+
+    async getRaffleDashboard(userId) {
+        const groups = await GroupActivation.findAll({
+            include: [{
+                model: WhatsAppInstance,
+                where: { userId },
+                required: true
+            }, {
+                model: Raffle,
+                required: false,
+                include: [{ model: Reservation, required: false }]
+            }],
+            order: [
+                ['groupName', 'ASC'],
+                [Raffle, 'createdAt', 'DESC']
+            ]
+        });
+
+        return groups.map(group => {
+            const raffles = group.Raffles || [];
+            const latestRaffle = raffles[0] || null;
+            
+            let stats = null;
+            if (latestRaffle) {
+                const reservations = latestRaffle.Reservations || [];
+                const paid = reservations.filter(r => r.status === 'PAID').length;
+                const reserved = reservations.filter(r => r.status === 'PENDING').length;
+                stats = {
+                    total: latestRaffle.numbersCount || 100,
+                    paid,
+                    reserved,
+                    free: (latestRaffle.numbersCount || 100) - paid - reserved
+                };
+            }
+
+            const groupData = group.toJSON();
+            delete groupData.Raffles; // Remove the full list
+
+            return {
+                ...groupData,
+                latestRaffle: latestRaffle ? {
+                    ...latestRaffle.toJSON(),
+                    stats,
+                    Reservations: undefined // Remove reservations detail to keep it light
+                } : null
+            };
         });
     }
 

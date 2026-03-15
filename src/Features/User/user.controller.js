@@ -49,14 +49,32 @@ class UserController {
         }
     }
 
-    async updatePlan(req, res) {
+    async update(req, res) {
         try {
             const { id } = req.params;
-            const { planId } = req.body;
-            await userService.updateUserPlan(id, planId);
-            res.json({ message: 'Plano atualizado com sucesso' });
+            const user = await userService.updateUser(id, req.body);
+            res.json(user);
         } catch (error) {
             res.status(400).json({ error: error.message });
+        }
+    }
+
+    async delete(req, res) {
+        try {
+            const { id } = req.params;
+            await userService.deleteUser(id);
+            res.json({ message: 'Usuário excluído com sucesso' });
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
+    async clearOnboarding(req, res) {
+        try {
+            await userService.clearOnboarding(req.user.id);
+            res.json({ message: 'Onboarding limpo com sucesso' });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
         }
     }
 }

@@ -3,11 +3,43 @@ const { Plan } = require('../../Models');
 class PlanController {
     async list(req, res) {
         try {
-            // If not logged in or not admin, show only public active plans
+            const { User, UserPlanAccess } = require('../../Models');
             const isAdmin = req.user?.role === 'ADMIN';
-            const where = isAdmin ? {} : { isPublic: true, status: 'active' };
-            
-            const plans = await Plan.findAll({ where });
+            const userId = req.user?.id;
+
+            if (isAdmin) {
+                // Admins see everything + allowed users
+                const plans = await Plan.findAll({
+                    include: [{
+                        model: User,
+                        as: 'allowedUsers',
+                        attributes: ['id', 'name', 'email'],
+                        through: { attributes: [] }
+                    }]
+                });
+                return res.json(plans);
+            }
+
+            // Normal users see:
+            // 1. All public active plans
+            // 2. Private plans they were granted access to
+            const plans = await Plan.findAll({
+                where: {
+                    status: 'active',
+                    [require('sequelize').Op.or]: [
+                        { isPublic: true },
+                        userId ? { '$allowedUsers.id$': userId } : {}
+                    ]
+                },
+                include: userId ? [{
+                    model: User,
+                    as: 'allowedUsers',
+                    where: { id: userId },
+                    required: false, // Don't filter out if no user allowed (Op.or handles it)
+                    attributes: []
+                }] : []
+            });
+
             return res.json(plans);
         } catch (error) {
             return res.status(500).json({ error: error.message });
@@ -19,7 +51,13 @@ class PlanController {
             if (req.user.role !== 'ADMIN') {
                 return res.status(403).json({ error: 'Acesso negado.' });
             }
-            const plan = await Plan.create(req.body);
+            const { allowedUserIds, ...planData } = req.body;
+            const plan = await Plan.create(planData);
+
+            if (allowedUserIds && Array.isArray(allowedUserIds)) {
+                await plan.setAllowedUsers(allowedUserIds);
+            }
+
             return res.status(201).json(plan);
         } catch (error) {
             return res.status(400).json({ error: error.message });
@@ -35,7 +73,13 @@ class PlanController {
             const plan = await Plan.findByPk(id);
             if (!plan) return res.status(404).json({ error: 'Plano não encontrado.' });
 
-            await plan.update(req.body);
+            const { allowedUserIds, ...planData } = req.body;
+            await plan.update(planData);
+
+            if (allowedUserIds && Array.isArray(allowedUserIds)) {
+                await plan.setAllowedUsers(allowedUserIds);
+            }
+
             return res.json(plan);
         } catch (error) {
             return res.status(400).json({ error: error.message });

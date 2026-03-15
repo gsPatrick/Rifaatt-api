@@ -38,6 +38,48 @@ class MasterController {
             return res.status(500).json({ error: error.message });
         }
     }
+
+    async getSummary(req, res) {
+        try {
+            if (req.user.role !== 'ADMIN') {
+                return res.status(403).json({ error: 'Acesso negado.' });
+            }
+
+            const { WhatsAppInstance, GroupActivation, User } = require('../../Models');
+            const { Op } = require('sequelize');
+
+            const totalActiveGroups = await GroupActivation.count({
+                where: { status: 'active' }
+            });
+
+            const totalActiveInstances = await WhatsAppInstance.count({
+                where: { status: 'CONNECTED' }
+            });
+
+            // Instances that are NOT connected but belong to users who have a plan assigned
+            const paidInactiveInstances = await WhatsAppInstance.count({
+                where: {
+                    status: { [Op.ne]: 'CONNECTED' }
+                },
+                include: [{
+                    model: User,
+                    where: {
+                        planId: { [Op.ne]: null }
+                    },
+                    required: true
+                }]
+            });
+
+            return res.json({
+                totalActiveGroups,
+                totalActiveInstances,
+                paidInactiveInstances
+            });
+        } catch (error) {
+            console.error('Get Summary Error:', error);
+            return res.status(500).json({ error: error.message });
+        }
+    }
 }
 
 module.exports = new MasterController();

@@ -41,6 +41,11 @@ Plan.init({
         type: DataTypes.BOOLEAN,
         defaultValue: true,
     },
+    durationDays: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 30,
+    },
     status: {
         type: DataTypes.ENUM('active', 'inactive'),
         defaultValue: 'active',

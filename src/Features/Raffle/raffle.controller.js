@@ -41,6 +41,16 @@ class RaffleController {
         }
     }
 
+    async getDashboard(req, res) {
+        try {
+            const userId = req.user.id;
+            const dashboard = await RaffleService.getRaffleDashboard(userId);
+            return res.json(dashboard);
+        } catch (error) {
+            return res.status(500).json({ error: error.message });
+        }
+    }
+
     async finalize(req, res) {
         try {
             const { id } = req.params;

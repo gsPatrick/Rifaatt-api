@@ -47,9 +47,24 @@ class WebhookService {
         try {
             const raffle = await RaffleService.getActiveRaffleByGroup(chatid);
 
+            // Fetch admin status for current sender
+            const groupInfo = await InstanceService.getGroupInfo(instance.token, chatid, instance.apiUrl);
+            const participants = groupInfo.participants || groupInfo.Participants || [];
+            const senderParticipant = participants.find(p => p.jid === sender || p.JID === sender);
+            const isAdmin = senderParticipant ? (senderParticipant.isAdmin || senderParticipant.IsAdmin) : false;
+
             // 1. Handle Reservations (Number only message)
-            if (/^\d+([\s,/]\d+)*$/.test(cleanText)) {
+            // Accepts: 10 20 | 10,20 | 10/20 | 10-20 | 10.20 | 10:20 | Multiline
+            const isReservation = /^[\d\s,.\-/:\n]+$/.test(cleanText) && /\d{1,3}/.test(cleanText);
+
+            if (isReservation) {
                 if (!raffle || raffle.status !== 'ACTIVE') return;
+
+                // Skip auto-reservation if sender is Admin (Admins must use !add)
+                if (isAdmin) {
+                    console.log(`Skipping auto-reservation for Admin: ${sender}`);
+                    return;
+                }
 
                 const result = await RaffleService.reserveNumbers(raffle.id, cleanText, msg.senderName || 'Usuário', sender);
 

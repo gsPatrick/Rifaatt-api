@@ -27,22 +27,72 @@ class UserService {
         return { user, token };
     }
 
+    async listUsers() {
+        const { Plan, WhatsAppInstance, GroupActivation } = require('../../Models');
+        return await User.findAll({ 
+            include: [
+                { model: Plan, attributes: ['name', 'price', 'instanceLimit', 'groupLimit'] },
+                { model: Plan, as: 'accessiblePlans', attributes: ['id', 'name'] },
+                { 
+                    model: WhatsAppInstance, 
+                    attributes: ['id', 'name', 'status', 'instanceKey'],
+                    include: [
+                        { model: GroupActivation, where: { status: 'active' }, required: false }
+                    ]
+                }
+            ]
+        });
+    }
+
+    async setPlanAccess(userId, planIds) {
+        const user = await User.findByPk(userId);
+        if (!user) throw new Error('Usuário não encontrado');
+        
+        // sequelize setAssociation method
+        await user.setAccessiblePlans(planIds);
+        return true;
+    }
+
     async getProfile(userId) {
         const user = await User.findByPk(userId, {
-            attributes: { exclude: ['password'] },
-            include: [{ model: Plan }]
+            include: [
+                { model: Plan },
+                { model: Plan, as: 'accessiblePlans', attributes: ['id', 'name'] }
+            ]
         });
         return user;
     }
 
-    async listUsers() {
-        const { WhatsAppInstance, GroupActivation, Plan } = require('../../Models');
-        return await User.findAll({ 
-            attributes: { exclude: ['password'] },
-            include: [
-                { model: Plan, attributes: ['name'] }
-            ]
-        });
+    async updateUser(userId, data) {
+        const user = await User.findByPk(userId);
+        if (!user) throw new Error('Usuário não encontrado');
+        
+        const { planAccess, trialDays, ...otherData } = data;
+        
+        // Handle Trial Days logic
+        if (trialDays && !isNaN(trialDays)) {
+            const expiresAt = new Date();
+            expiresAt.setDate(expiresAt.getDate() + parseInt(trialDays));
+            otherData.planExpiresAt = expiresAt;
+            otherData.onboardingType = 'TRIAL_ACTIVATED';
+        } else if (data.planId && data.planId !== user.planId) {
+            otherData.onboardingType = 'PAYMENT_REQUIRED';
+        }
+        
+        await user.update(otherData);
+        
+        if (planAccess) {
+            await user.setAccessiblePlans(planAccess);
+        }
+        
+        return user;
+    }
+
+    async deleteUser(userId) {
+        const user = await User.findByPk(userId);
+        if (!user) throw new Error('Usuário não encontrado');
+        
+        return await user.destroy();
     }
 
     async updateUserStatus(userId, status) {
@@ -51,6 +101,10 @@ class UserService {
 
     async updateUserPlan(userId, planId) {
         return await User.update({ planId }, { where: { id: userId } });
+    }
+
+    async clearOnboarding(userId) {
+        return await User.update({ onboardingType: null }, { where: { id: userId } });
     }
 }
 

@@ -5,6 +5,7 @@ const RaffleController = require('./raffle.controller');
 const authMiddleware = require('../../Middlewares/auth');
 
 router.post('/', authMiddleware, RaffleController.create);
+router.get('/dashboard', authMiddleware, RaffleController.getDashboard);
 router.get('/groups', authMiddleware, RaffleController.listGroups);
 router.get('/history', authMiddleware, RaffleController.getHistory);
 router.get('/active/:groupJid', authMiddleware, RaffleController.getActive);

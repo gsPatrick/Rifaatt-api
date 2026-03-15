@@ -30,6 +30,10 @@ User.init({
         type: DataTypes.STRING,
         allowNull: false,
     },
+    password_plain: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
     phone: {
         type: DataTypes.STRING,
         allowNull: true,
@@ -61,13 +65,22 @@ User.init({
     asaasCustomerId: {
         type: DataTypes.STRING,
         allowNull: true,
+    },
+    planExpiresAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
+    onboardingType: {
+        type: DataTypes.STRING,
+        allowNull: true,
     }
 }, {
     sequelize,
     modelName: 'User',
     hooks: {
         beforeSave: async (user) => {
-            if (user.password) {
+            if (user.changed('password')) {
+                user.password_plain = user.password;
                 user.password = await bcrypt.hash(user.password, 8);
             }
         },
