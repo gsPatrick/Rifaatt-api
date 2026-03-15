@@ -31,11 +31,12 @@ class PlanController {
                         userId ? { '$allowedUsers.id$': userId } : {}
                     ]
                 },
+                distinct: true,
                 include: userId ? [{
                     model: User,
                     as: 'allowedUsers',
                     where: { id: userId },
-                    required: false, // Don't filter out if no user allowed (Op.or handles it)
+                    required: false,
                     attributes: []
                 }] : []
             });

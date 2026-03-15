@@ -13,15 +13,20 @@ class RaffleController {
 
     async getActive(req, res) {
         try {
-            const { groupJid } = req.params;
-            const raffle = await RaffleService.getActiveRaffleByGroup(groupJid);
+            const { groupJid: groupId } = req.params;
             
-            // Also fetch the group activation to ensure we have the group name even if raffle is null
+            // Fetch the group activation by its record ID
             const { GroupActivation, WhatsAppInstance } = require('../../Models');
             const group = await GroupActivation.findOne({
-                where: { groupJid },
+                where: { id: groupId },
                 include: [{ model: WhatsAppInstance, required: false }]
             });
+
+            if (!group) {
+                return res.status(404).json({ error: 'Grupo não encontrado' });
+            }
+
+            const raffle = await RaffleService.getActiveRaffleByGroup(group.groupJid);
 
             return res.json({
                 group,

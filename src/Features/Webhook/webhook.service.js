@@ -8,6 +8,7 @@ const { Op } = require('sequelize');
 class WebhookService {
     async handleEvent(payload) {
         const { event, instance: instanceKey, data } = payload;
+        console.log(`[Webhook] Event Received: ${event} | Instance: ${instanceKey}`);
 
         if (event !== 'message' && event !== 'messages') return;
 
@@ -24,6 +25,8 @@ class WebhookService {
         if (fromMe) return;
         if (!isGroup) return;
 
+        console.log(`[Webhook] Processing Message: "${text}" | From: ${sender} | Chat: ${chatid}`);
+
         const instance = await WhatsAppInstance.findOne({ where: { instanceKey } });
         if (!instance) return;
 
@@ -37,12 +40,16 @@ class WebhookService {
             }
         });
 
-        if (!activation) return;
+        if (!activation) {
+            console.log(`[Webhook] Group not active or not found: ${chatid}`);
+            return;
+        }
         if (!text) return;
 
         const cleanText = text.trim();
         const args = cleanText.split(/ +/);
         const command = args.shift().toLowerCase();
+        console.log(`[Webhook] Command/Input: ${command} | Args: ${args.join(' ')}`);
 
         try {
             const raffle = await RaffleService.getActiveRaffleByGroup(chatid);
@@ -69,6 +76,7 @@ class WebhookService {
                 const result = await RaffleService.reserveNumbers(raffle.id, cleanText, msg.senderName || 'Usuário', sender);
 
                 if (result.success) {
+                    console.log(`[Webhook] Reservation Success: ${result.reserved.join(', ')} for ${sender}`);
                     const reaction = result.status === 'PARTIAL' ? '❕' : '✅';
                     await InstanceService.reactToMessage(instance.token, chatid, reaction, messageId, instance.apiUrl);
 
