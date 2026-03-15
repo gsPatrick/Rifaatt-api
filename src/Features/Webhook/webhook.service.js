@@ -33,7 +33,8 @@ class WebhookService {
     }
 
     async processMessage(instanceKey, msg) {
-        const { chatid, sender, text, fromMe, isGroup, id: messageId } = msg;
+        const { chatid, text, fromMe, isGroup, id: messageId } = msg;
+        const sender = msg.sender_pn || msg.sender;
 
         // Log everything for debugging
         console.log(`[Webhook] Incoming: "${text}" | fromMe: ${fromMe} | isGroup: ${isGroup} | Sender: ${sender}`);
@@ -102,7 +103,7 @@ class WebhookService {
         console.log(`[Webhook] Command/Input: ${command} | Args: ${args.join(' ')}`);
 
         try {
-            const raffle = await RaffleService.getActiveRaffleByGroup(chatid);
+            let raffle = await RaffleService.getActiveRaffleByGroup(chatid);
 
             // Fetch admin status for current sender
             // If fromMe is true, it is the instance owner/admin
