@@ -201,7 +201,6 @@ class RaffleService {
         const buyerName = reservations[0].buyerName;
 
         let message = `👤 *RESUMO: ${buyerName}*\n\n`;
-        message += `📌 *Rifa:* ${raffle.title}\n`;
         
         if (pending.length > 0) {
             message += `⏳ *Pendentes (${pending.length}):* ${pending.map(r => r.number).join(', ')}\n`;
