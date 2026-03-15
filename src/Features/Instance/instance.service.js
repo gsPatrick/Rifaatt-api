@@ -103,16 +103,19 @@ class InstanceService {
             headers: { token: instance.token }
         });
 
-        // Update status in DB
-        instance.status = response.data.instance.status;
+        console.log('[STATUS] Uazapi Response for', instanceId, ':', JSON.stringify(response.data));
 
-        // If connected, clear pairing code
-        if (instance.status === 'connected') {
-            instance.pairingCode = null;
-        }
-
-        await instance.save();
-
+        // Sync local status
+        if (response.data.instance) {
+            instance.status = response.data.instance.status;
+            // Also update pairing code if it arrived later
+            const pairCode = response.data.instance?.paircode || response.data.paircode || response.data.pairingCode || response.data.instance?.pairCode;
+            if (pairCode && pairCode.length > 0) {
+                instance.pairingCode = pairCode;
+            }
+            
+            await instance.save();
+        } 
         return response.data;
     }
 
