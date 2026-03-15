@@ -42,15 +42,54 @@ class ReportService {
             }]
         });
 
-        const totalValue = totalReservations.reduce((acc, curr) => {
+        const currentWeekValue = totalReservations.reduce((acc, curr) => {
+            if (curr.status !== 'PAID') return acc;
             const val = parseFloat(curr.Raffle?.ticketValue);
             return acc + (isNaN(val) ? 0 : val);
         }, 0);
 
+        // Previous Week Trend Calculation
+        const prevWeekStart = new Date();
+        prevWeekStart.setDate(prevWeekStart.getDate() - 13);
+        prevWeekStart.setHours(0, 0, 0, 0);
+        const prevWeekEnd = new Date();
+        prevWeekEnd.setDate(prevWeekEnd.getDate() - 7);
+        prevWeekEnd.setHours(0, 0, 0, 0);
+
+        const prevWeekReservations = await Reservation.findAll({
+            include: [{
+                model: Raffle,
+                required: true,
+                include: [{
+                    model: WhatsAppInstance,
+                    where: { userId },
+                    required: true
+                }]
+            }],
+            where: {
+                createdAt: { [Op.between]: [prevWeekStart, prevWeekEnd] },
+                status: 'PAID'
+            }
+        });
+
+        const prevWeekValue = prevWeekReservations.reduce((acc, curr) => {
+            const val = parseFloat(curr.Raffle?.ticketValue);
+            return acc + (isNaN(val) ? 0 : val);
+        }, 0);
+
+        let trendPercent = 0;
+        if (prevWeekValue > 0) {
+            trendPercent = Math.round(((currentWeekValue - prevWeekValue) / prevWeekValue) * 100);
+        } else if (currentWeekValue > 0) {
+            trendPercent = 100;
+        }
+
+        const trendLabel = trendPercent >= 0 ? `+${trendPercent}%` : `${trendPercent}%`;
+
         return {
             chartData: results,
-            totalSales: `R$ ${totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-            trend: '+12%'
+            totalSales: `R$ ${currentWeekValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+            trend: trendLabel
         };
     }
 
@@ -81,9 +120,12 @@ class ReportService {
             }
             userMap[phone].participations += 1;
             userMap[phone].groups.add(r.raffleId);
-            userMap[phone].total += parseFloat(r.Raffle?.ticketValue || 0);
+            
+            if (r.status === 'PAID') {
+                userMap[phone].total += parseFloat(r.Raffle?.ticketValue || 0);
+            }
 
-            if (r.Raffle?.status === 'FINISHED' && r.Raffle?.winningNumber === r.number) {
+            if (r.Raffle?.status === 'FINISHED' && r.Raffle?.winningNumber === r.number && r.status === 'PAID') {
                 userMap[phone].wins += 1;
             }
         });
@@ -95,7 +137,7 @@ class ReportService {
             groups: u.groups.size,
             value: `R$ ${u.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
             wins: u.wins,
-            totalWon: `R$ ${(u.wins * 500).toFixed(2)}`,
+            totalWon: `${u.wins} prêmio${u.wins !== 1 ? 's' : ''}`,
             luck: u.participations > 0 ? `${Math.round((u.wins / u.participations) * 100)}%` : '0%',
             spent: `R$ ${u.total.toFixed(2)}`
         }));
