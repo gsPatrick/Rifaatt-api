@@ -188,7 +188,7 @@ class WebhookService {
                 switch (command) {
                     case '!titulo':
                         if (!raffle) {
-                            raffle = await Raffle.create({ groupJid: chatid, instanceId: instance.id, status: 'CREATED', title: 'Nova Rifa', prize: 'A definir', ticketValue: 10.00, pixKey: 'Chave PIX' });
+                            raffle = await Raffle.create({ groupJid: chatid, instanceId: instance.id, status: 'CREATED', title: 'Nova Rifa', prize: 'A definir', ticketValue: 10.00, pixKey: 'Chave PIX', numbersCount: 100 });
                         }
                         raffle.title = args.join(' ');
                         await raffle.save();
@@ -198,7 +198,7 @@ class WebhookService {
                     case '!premio':
                     case '!prêmio':
                         if (!raffle) {
-                            raffle = await Raffle.create({ groupJid: chatid, instanceId: instance.id, status: 'CREATED', title: 'Nova Rifa', prize: 'A definir', ticketValue: 10.00, pixKey: 'Chave PIX' });
+                            raffle = await Raffle.create({ groupJid: chatid, instanceId: instance.id, status: 'CREATED', title: 'Nova Rifa', prize: 'A definir', ticketValue: 10.00, pixKey: 'Chave PIX', numbersCount: 100 });
                         }
                         raffle.prize = args.join(' ');
                         await raffle.save();
@@ -207,7 +207,7 @@ class WebhookService {
 
                     case '!pix':
                         if (!raffle) {
-                            raffle = await Raffle.create({ groupJid: chatid, instanceId: instance.id, status: 'CREATED', title: 'Nova Rifa', prize: 'A definir', ticketValue: 10.00, pixKey: 'Chave PIX' });
+                            raffle = await Raffle.create({ groupJid: chatid, instanceId: instance.id, status: 'CREATED', title: 'Nova Rifa', prize: 'A definir', ticketValue: 10.00, pixKey: 'Chave PIX', numbersCount: 100 });
                         }
                         raffle.pixKey = args[0];
                         await raffle.save();
@@ -216,7 +216,7 @@ class WebhookService {
 
                     case '!valor_dezena':
                         if (!raffle) {
-                            raffle = await Raffle.create({ groupJid: chatid, instanceId: instance.id, status: 'CREATED', title: 'Nova Rifa', prize: 'A definir', ticketValue: 10.00, pixKey: 'Chave PIX' });
+                            raffle = await Raffle.create({ groupJid: chatid, instanceId: instance.id, status: 'CREATED', title: 'Nova Rifa', prize: 'A definir', ticketValue: 10.00, pixKey: 'Chave PIX', numbersCount: 100 });
                         }
                         raffle.ticketValue = parseFloat(args[0].replace(/[^0-9.]/g, ''));
                         await raffle.save();

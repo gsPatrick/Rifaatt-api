@@ -50,8 +50,20 @@ app.listen(PORT, async () => {
         console.log('[Startup] Syncing webhooks for all instances...');
         const syncResult = await instanceService.syncWebhooks();
         console.log(`[Startup] Webhook sync completed: ${syncResult.success} success, ${syncResult.failed} failed.`);
+
+        // Fix raffles with 0 or NULL numbersCount
+        const Raffle = require('./src/Models/Raffle');
+        const { Op } = require('sequelize');
+        console.log('[Startup] Checking for raffles with missing numbersCount...');
+        const [fixedCount] = await Raffle.update(
+            { numbersCount: 100 },
+            { where: { [Op.or]: [{ numbersCount: 0 }, { numbersCount: null }] } }
+        );
+        if (fixedCount > 0) {
+            console.log(`[Startup] Fixed ${fixedCount} raffles with 0 or NULL numbersCount.`);
+        }
     } catch (error) {
-        console.error('[Startup] Failed to auto-sync webhooks:', error);
+        console.error('[Startup] Failed to run initialization scripts:', error);
     }
 });
 
