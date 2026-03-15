@@ -69,18 +69,19 @@ class InstanceService {
         });
     }
 
-    async connectInstance(instanceId) {
+    async connectInstance(instanceId, phone = null) {
         const instance = await WhatsAppInstance.findByPk(instanceId);
         if (!instance) throw new Error('Instance not found');
 
         const client = this.#getClient(instance.apiUrl);
-        const response = await client.post('/instance/connect', {}, {
+        const response = await client.post('/instance/connect', { phone }, {
             headers: { token: instance.token }
         });
 
         // If Uazapi returns a pairing code, store it
-        if (response.data.pairingCode) {
-            instance.pairingCode = response.data.pairingCode;
+        const pairCode = response.data.instance?.paircode || response.data.paircode || response.data.pairingCode;
+        if (pairCode) {
+            instance.pairingCode = pairCode;
             await instance.save();
         }
 

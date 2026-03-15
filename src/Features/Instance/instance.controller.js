@@ -19,7 +19,8 @@ class InstanceController {
     async connect(req, res) {
         try {
             const { id } = req.params;
-            const data = await instanceService.connectInstance(id);
+            const { phone } = req.body;
+            const data = await instanceService.connectInstance(id, phone);
             res.json(data);
         } catch (error) {
             res.status(400).json({ error: error.message });
