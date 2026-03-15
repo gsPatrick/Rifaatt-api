@@ -187,6 +187,91 @@ class ReportService {
         };
     }
 
+    async getParticipantProfile(userId, participantId) {
+        // participantId is the buyerPhone (JID)
+        const reservations = await Reservation.findAll({
+            where: { buyerPhone: participantId },
+            include: [{
+                model: Raffle,
+                required: true,
+                include: [{
+                    model: WhatsAppInstance,
+                    where: { userId },
+                    required: true
+                }, {
+                    model: GroupActivation,
+                    required: false
+                }]
+            }],
+            order: [['createdAt', 'DESC']]
+        });
+
+        if (reservations.length === 0) {
+            return { stats: { totalSpent: 'R$ 0,00', totalRaffles: 0, winRate: '0%', lastSeen: '-' }, spendingData: [], winHistory: [] };
+        }
+
+        // Stats
+        const totalSpent = reservations.reduce((acc, r) => {
+            if (r.status === 'PAID') {
+                return acc + parseFloat(r.Raffle?.ticketValue || 0);
+            }
+            return acc;
+        }, 0);
+
+        const totalRaffles = reservations.length;
+        const lastSeen = new Date(reservations[0].createdAt).toLocaleDateString('pt-BR');
+
+        // Wins
+        const wins = reservations.filter(r => 
+            r.Raffle?.status === 'FINISHED' && r.Raffle?.winningNumber === r.number && r.status === 'PAID'
+        );
+        const winRate = totalRaffles > 0 ? `${Math.round((wins.length / totalRaffles) * 100)}%` : '0%';
+
+        // Group distribution (spending by group)
+        const groupMap = {};
+        reservations.forEach(r => {
+            const groupName = r.Raffle?.GroupActivation?.groupName || r.Raffle?.title || 'Outros';
+            if (!groupMap[groupName]) groupMap[groupName] = 0;
+            groupMap[groupName] += parseFloat(r.Raffle?.ticketValue || 0);
+        });
+
+        let spendingData = Object.entries(groupMap)
+            .map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }))
+            .sort((a, b) => b.value - a.value);
+
+        // Keep top 3 groups and group the rest into "Outros"
+        if (spendingData.length > 4) {
+            const top3 = spendingData.slice(0, 3);
+            const rest = spendingData.slice(3).reduce((acc, item) => acc + item.value, 0);
+            spendingData = [...top3, { name: 'Outros', value: Math.round(rest * 100) / 100 }];
+        }
+
+        // Win history
+        const winHistory = wins.map(r => {
+            const animal = r.number;
+            return {
+                id: r.id,
+                raffle: r.Raffle?.title || 'Rifa',
+                date: new Date(r.Raffle?.updatedAt || r.createdAt).toLocaleDateString('pt-BR'),
+                prize: `R$ ${parseFloat(r.Raffle?.ticketValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+                group: r.Raffle?.GroupActivation?.groupName || 'Grupo',
+                number: animal
+            };
+        });
+
+        return {
+            stats: {
+                totalSpent: `R$ ${totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+                totalRaffles,
+                winRate,
+                winsCount: wins.length,
+                lastSeen
+            },
+            spendingData,
+            winHistory
+        };
+    }
+
     async getAllActivities(userId, page = 1, limit = 20) {
         const offset = (page - 1) * limit;
 

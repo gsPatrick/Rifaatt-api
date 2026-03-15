@@ -42,6 +42,17 @@ class ReportController {
             res.status(500).json({ error: error.message });
         }
     }
+
+    async getParticipantProfile(req, res) {
+        try {
+            const userId = req.user.id;
+            const participantId = decodeURIComponent(req.params.participantId);
+            const profile = await ReportService.getParticipantProfile(userId, participantId);
+            res.json(profile);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
 }
 
 module.exports = new ReportController();

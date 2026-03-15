@@ -7,5 +7,6 @@ router.get('/top-users', authMiddleware, ReportController.getTopUsers);
 router.get('/sales-stats', authMiddleware, ReportController.getSalesStats);
 router.get('/dashboard/summary', authMiddleware, ReportController.getDashboardSummary);
 router.get('/activities', authMiddleware, ReportController.getAllActivities);
+router.get('/participant/:participantId', authMiddleware, ReportController.getParticipantProfile);
 
 module.exports = router;
