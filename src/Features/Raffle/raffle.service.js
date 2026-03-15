@@ -151,31 +151,24 @@ class RaffleService {
         const padSize = (raffle.numbersCount || 100).toString().length - 1;
         const maxNumber = raffle.numbersCount || 100;
 
-        // Parse numbers: handles 3 5 6 or 45/34/12 or 01,02 or 01-02 or 01.02 or 01:02 or multiline
+        // Parse and normalize numbers: handles 3 5 6 or 45/34/12 or 01,02 or multiline
         const numbers = numbersStr.split(/[\s,.\-/:\n]+/)
             .filter(n => n.length > 0)
-            .map(n => n.padStart(padSize, '0'))
-            .filter((v, i, a) => a.indexOf(v) === i);
+            .map(n => parseInt(n)) // Convert to integer first to clean up (e.g., 001 -> 1)
+            .filter(n => !isNaN(n)) // Keep only valid numbers
+            .filter((v, i, a) => a.indexOf(v) === i) // Remove duplicates
+            .map(n => n.toString().padStart(padSize, '0')); // Re-pad to correct size (e.g., 1 -> 01)
 
         if (numbers.length === 0) {
             return { success: false, error: 'Nenhum número válido fornecido.' };
         }
 
-        // Validate range and format
-        const outOfRange = numbers.filter(num => parseInt(num) >= maxNumber);
+        // Validate range
+        const outOfRange = numbers.filter(num => parseInt(num) >= maxNumber || parseInt(num) < 0);
         if (outOfRange.length > 0) {
             return {
                 success: false,
                 error: `Número(s) fora do intervalo (0-${maxNumber - 1}): ${outOfRange.join(', ')}.`
-            };
-        }
-
-        const invalidNumbers = numbers.filter(num => isNaN(parseInt(num)));
-        if (invalidNumbers.length > 0) {
-            return {
-                success: false,
-                error: `Número(s) inválido(s): ${invalidNumbers.join(', ')}.`,
-                invalid: invalidNumbers
             };
         }
 
@@ -325,7 +318,17 @@ class RaffleService {
     }
 
     async removeReservations(raffleId, numbersStr) {
-        const numbers = numbersStr.split(/[\s,]+/).filter(n => n.length > 0).map(n => n.padStart(2, '0'));
+        const raffle = await Raffle.findByPk(raffleId);
+        if (!raffle) throw new Error('Rifa não encontrada.');
+
+        const padSize = (raffle.numbersCount || 100).toString().length - 1;
+
+        const numbers = numbersStr.split(/[\s,.\-/:\n]+/)
+            .filter(n => n.length > 0)
+            .map(n => parseInt(n))
+            .filter(n => !isNaN(n))
+            .map(n => n.toString().padStart(padSize, '0'));
+
         return await Reservation.destroy({
             where: {
                 raffleId,
