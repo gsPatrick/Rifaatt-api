@@ -74,12 +74,20 @@ class InstanceService {
         if (!instance) throw new Error('Instance not found');
 
         const client = this.#getClient(instance.apiUrl);
+        console.log(`[CONNECT] Connecting instance ${instanceId} with phone: ${phone}`);
+        
         const response = await client.post('/instance/connect', { phone }, {
             headers: { token: instance.token }
         });
 
+        console.log('[CONNECT] Uazapi response status:', response.status);
+        console.log('[CONNECT] Uazapi response data keys:', Object.keys(response.data));
+        if (response.data.instance) console.log('[CONNECT] Uazapi instance keys:', Object.keys(response.data.instance));
+
         // If Uazapi returns a pairing code, store it
         const pairCode = response.data.instance?.paircode || response.data.paircode || response.data.pairingCode;
+        console.log('[CONNECT] Extracted pairCode:', pairCode);
+
         if (pairCode) {
             instance.pairingCode = pairCode;
             await instance.save();
