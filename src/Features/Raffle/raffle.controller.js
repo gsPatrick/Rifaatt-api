@@ -109,6 +109,16 @@ class RaffleController {
             return res.status(400).json({ error: error.message });
         }
     }
+
+    async deleteGroup(req, res) {
+        try {
+            const { id } = req.params;
+            const result = await RaffleService.deleteGroupActivation(id);
+            return res.json(result);
+        } catch (error) {
+            return res.status(400).json({ error: error.message });
+        }
+    }
 }
 
 module.exports = new RaffleController();

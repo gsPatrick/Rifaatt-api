@@ -416,6 +416,28 @@ class RaffleService {
                 subject: g.Name
             }));
     }
+
+    async deleteGroupActivation(id) {
+        // Find the group
+        const group = await GroupActivation.findByPk(id);
+        if (!group) throw new Error('Grupo não encontrado.');
+
+        // Check for active raffles
+        const activeRaffle = await Raffle.findOne({
+            where: {
+                groupJid: group.groupJid,
+                status: 'ACTIVE'
+            }
+        });
+
+        if (activeRaffle) {
+            throw new Error('Não é possível excluir o grupo pois existe uma rifa em andamento. Finalize a rifa primeiro.');
+        }
+
+        // Delete the group activation
+        await group.destroy();
+        return { message: 'Grupo excluído com sucesso.' };
+    }
 }
 
 module.exports = new RaffleService();

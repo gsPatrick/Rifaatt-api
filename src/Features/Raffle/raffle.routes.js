@@ -13,5 +13,6 @@ router.post('/finalize/:id', authMiddleware, RaffleController.finalize);
 router.post('/create-group', authMiddleware, RaffleController.createGroup);
 router.post('/groups', authMiddleware, RaffleController.activate);
 router.get('/groups-from-instance/:instanceId', authMiddleware, RaffleController.getGroupsFromInstance);
+router.delete('/groups/:id', authMiddleware, RaffleController.deleteGroup);
 
 module.exports = router;
