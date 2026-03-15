@@ -35,14 +35,35 @@ class WebhookService {
     async processMessage(instanceKey, msg) {
         const { chatid, sender, text, fromMe, isGroup, id: messageId } = msg;
 
-        if (fromMe) return;
-        if (!isGroup) return;
+        // Log everything for debugging
+        console.log(`[Webhook] Incoming: "${text}" | fromMe: ${fromMe} | isGroup: ${isGroup} | Sender: ${sender}`);
+
+        // Allow fromMe if it's a command (starts with !)
+        const isCommand = text?.trim().startsWith('!');
+        if (fromMe && !isCommand) {
+            console.log(`[Webhook] Skipping: fromMe and NOT a command.`);
+            return;
+        }
+
+        if (!isGroup) {
+            console.log(`[Webhook] Skipping: NOT a group message.`);
+            return;
+        }
 
         console.log(`[Webhook] Processing Message: "${text}" | From: ${sender} | Chat: ${chatid}`);
 
-        const instance = await WhatsAppInstance.findOne({ where: { instanceKey } });
+        // Lookup instance by token OR instanceKey (Uazapi v2 uses token)
+        const instance = await WhatsAppInstance.findOne({
+            where: {
+                [Op.or]: [
+                    { instanceKey: instanceKey },
+                    { token: instanceKey }
+                ]
+            }
+        });
+
         if (!instance) {
-            console.log(`[Webhook] Instance NOT FOUND in database for key: ${instanceKey}`);
+            console.log(`[Webhook] Instance NOT FOUND in database for key/token: ${instanceKey}`);
             return;
         }
         console.log(`[Webhook] Instance Found: ${instance.name} (ID: ${instance.id})`);
@@ -84,13 +105,19 @@ class WebhookService {
             const raffle = await RaffleService.getActiveRaffleByGroup(chatid);
 
             // Fetch admin status for current sender
+            // If fromMe is true, it is the instance owner/admin
+            let isAdmin = fromMe;
+            
             const groupInfo = await InstanceService.getGroupInfo(instance.token, chatid, instance.apiUrl);
             const participants = groupInfo.participants || groupInfo.Participants || [];
             const senderParticipant = participants.find(p => p.jid === sender || p.JID === sender);
-            const isAdmin = senderParticipant ? (senderParticipant.isAdmin || senderParticipant.IsAdmin) : false;
+            
+            if (!isAdmin) {
+                isAdmin = senderParticipant ? (senderParticipant.isAdmin || senderParticipant.IsAdmin) : false;
+            }
 
-            console.log(`[Webhook] Sender: ${sender} | IsAdmin: ${isAdmin} | Total Participants: ${participants.length}`);
-            if (!senderParticipant) {
+            console.log(`[Webhook] Sender: ${sender} | fromMe: ${fromMe} | IsAdmin: ${isAdmin} | Total Participants: ${participants.length}`);
+            if (!senderParticipant && !fromMe) {
                 console.log(`[Webhook] Sender NOT FOUND in participants list. Mapping might be off.`);
             }
 
@@ -257,36 +284,6 @@ class WebhookService {
                         logMsg += `⏳ *Pendentes:* ${stats.pending} (R$ ${stats.pendingValue.toFixed(2)})\n`;
                         logMsg += `💰 *Total Previsto:* R$ ${stats.totalValue.toFixed(2)}`;
                         await this.reply(instance.token, chatid, logMsg, instance.apiUrl);
-                        break;
-
-                    case '!valor':
-                        if (!raffle) return;
-                        const valUser = this.getMentionedJid(msg, args) || sender;
-                        const userReservations = raffle.Reservations.filter(r => r.buyerPhone === valUser);
-                        if (userReservations.length === 0) return this.reply(instance.token, chatid, "❌ Você não possui reservas nesta rifa.", instance.apiUrl);
-
-                        const total = userReservations.length * raffle.ticketValue;
-                        const unpaid = userReservations.filter(r => r.status === 'PENDING').length;
-
-                        let valMsg = `👤 *Nome:* ${msg.senderName || 'Usuário'}\n`;
-                        valMsg += `🧾 *Dezena(s):* ${userReservations.map(r => r.number).join(', ')}\n`;
-                        valMsg += `💰 *Valor a Pagar:* R$ ${total.toFixed(2)}\n`;
-                        valMsg += `Status: ${unpaid > 0 ? '⏳ Não Pago' : '✅ Pago'}\n\n`;
-                        valMsg += `🔑 *PIX:* ${raffle.pixKey}`;
-                        await this.reply(instance.token, chatid, valMsg, instance.apiUrl);
-                        break;
-
-                    case '!disponivel':
-                    case '!lista':
-                        if (!raffle) return;
-                        const reservedNums = raffle.Reservations.map(r => r.number);
-                        const available = [];
-                        for (let i = 1; i <= 99; i++) {
-                            const n = i.toString().padStart(2, '0');
-                            if (!reservedNums.includes(n)) available.push(n);
-                        }
-                        if (!reservedNums.includes('00')) available.push('00');
-                        await this.reply(instance.token, chatid, `🟢 *Dezenas Disponíveis:*\n${available.join(' ')}`, instance.apiUrl);
                         break;
                 }
             }
