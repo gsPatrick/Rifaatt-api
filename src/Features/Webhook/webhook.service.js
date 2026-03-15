@@ -189,11 +189,29 @@ class WebhookService {
                 // User Commands (No Admin Required)
                 if (command === '!valor') {
                     if (!raffle) return;
-                    await this.reply(instance.token, chatid, `💰 *Valor da Dezena*: R$ ${raffle.ticketValue}\n🔑 *PIX*: ${raffle.pixKey}`, instance.apiUrl);
+                    const mentionedJid = this.getMentionedJid(msg, args);
+                    let targetJid = from;
+                    if (isAdmin && mentionedJid) {
+                        targetJid = mentionedJid;
+                    }
+
+                    const summary = await RaffleService.getUserSummary(raffle.id, targetJid);
+                    if (summary) {
+                        await this.reply(instance.token, chatid, summary, instance.apiUrl);
+                    } else {
+                        await this.reply(instance.token, chatid, `💰 *Valor da Dezena*: R$ ${raffle.ticketValue}\n🔑 *PIX*: ${raffle.pixKey}`, instance.apiUrl);
+                    }
                     return;
                 }
 
-                if (command === '!disponivel' || command === '!lista') {
+                if (command === '!disponivel') {
+                    if (!raffle || raffle.status !== 'ACTIVE') return;
+                    const list = await RaffleService.generateAvailableList(raffle.id);
+                    await this.reply(instance.token, chatid, list, instance.apiUrl);
+                    return;
+                }
+
+                if (command === '!lista') {
                     if (!raffle || raffle.status !== 'ACTIVE') return;
                     const list = await RaffleService.generateVisualList(raffle.id);
                     await this.reply(instance.token, chatid, list, instance.apiUrl);

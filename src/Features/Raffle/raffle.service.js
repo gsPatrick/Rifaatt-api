@@ -120,12 +120,11 @@ class RaffleService {
         message += `💰 *VALOR:* R$ ${raffle.ticketValue}\n`;
         message += `🔑 *PIX:* ${raffle.pixKey}\n\n`;
 
-        const numbers = [];
-        for (let i = 1; i <= 99; i++) numbers.push(i.toString().padStart(2, '0'));
-        numbers.push('00');
-
-        for (let i = 0; i < numbers.length; i++) {
-            const num = numbers[i];
+        const padSize = (raffle.numbersCount || 100).toString().length - 1;
+        const total = raffle.numbersCount || 100;
+        
+        for (let i = 0; i < total; i++) {
+            const num = i.toString().padStart(padSize, '0');
             const animal = await this.getAnimalForNumber(num);
             const res = resMap[num];
 
@@ -139,6 +138,81 @@ class RaffleService {
 
             message += `${animal.e}${num}.${buyer} ${status}\n`;
         }
+
+        return message;
+    }
+
+    async generateAvailableList(raffleId) {
+        const raffle = await Raffle.findByPk(raffleId);
+        if (!raffle) throw new Error('Rifa não encontrada.');
+
+        const reservations = await Reservation.findAll({ where: { raffleId: raffleId } });
+        const takenNumbers = reservations.map(r => r.number);
+
+        let message = `🎰 *${raffle.title}*\n`;
+        message += `🎁 *PRÊMIO:* ${raffle.prize}\n`;
+        message += `💰 *VALOR:* R$ ${raffle.ticketValue}\n`;
+        message += `🔑 *PIX:* ${raffle.pixKey}\n\n`;
+        message += `✅ *DEZENAS DISPONÍVEIS:* \n\n`;
+
+        const padSize = (raffle.numbersCount || 100).toString().length - 1;
+        const total = raffle.numbersCount || 100;
+        
+        const available = [];
+        for (let i = 0; i < total; i++) {
+            const num = i.toString().padStart(padSize, '0');
+            if (!takenNumbers.includes(num)) {
+                available.push(num);
+            }
+        }
+
+        if (available.length === 0) {
+            message += "⚠️ Todas as dezenas já foram vendidas!";
+        } else {
+            // Group by animal for better display
+            let currentAnimal = "";
+            for (const num of available) {
+                const animal = await this.getAnimalForNumber(num);
+                if (animal.n !== currentAnimal) {
+                    message += `\n*${animal.e} ${animal.n}:* `;
+                    currentAnimal = animal.n;
+                }
+                message += `${num} `;
+            }
+        }
+
+        return message;
+    }
+
+    async getUserSummary(raffleId, buyerPhone) {
+        const raffle = await Raffle.findByPk(raffleId);
+        if (!raffle) throw new Error('Rifa não encontrada.');
+
+        const reservations = await Reservation.findAll({
+            where: { raffleId, buyerPhone }
+        });
+
+        if (reservations.length === 0) return null;
+
+        const paid = reservations.filter(r => r.status === 'PAID');
+        const pending = reservations.filter(r => r.status === 'PENDING');
+        const total = reservations.length * raffle.ticketValue;
+        
+        const buyerName = reservations[0].buyerName;
+
+        let message = `👤 *RESUMO: ${buyerName}*\n\n`;
+        message += `📌 *Rifa:* ${raffle.title}\n`;
+        
+        if (pending.length > 0) {
+            message += `⏳ *Pendentes (${pending.length}):* ${pending.map(r => r.number).join(', ')}\n`;
+        }
+        if (paid.length > 0) {
+            message += `✅ *Pagos (${paid.length}):* ${paid.map(r => r.number).join(', ')}\n`;
+        }
+        
+        message += `\n💰 *Total:* R$ ${total.toFixed(2)}\n`;
+        message += `🔑 *PIX:* ${raffle.pixKey}\n\n`;
+        message += `📌 Após pagar, envie o comprovante para confirmar suas dezenas.`;
 
         return message;
     }
